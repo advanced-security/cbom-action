@@ -11,7 +11,7 @@
      - Post repo information centrally to queue a PQC query analysis (perhaps using GH Actions minutes rather than customer)
    - Output CBOM info
 
-2. Scheduled Actions worklflow in GH repo
+2. Scheduled Actions workflow in GH repo
    - Pull list of top 100 dependencies for in scope package ecosystems
    - Pull list of dependencies previously analysed but no longer in top 100
    - Merge lists
