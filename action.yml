@@ -1,27 +1,31 @@
-name: 'PQC Action'
-description: 'Run the Post Quantum Research CodeQL queries and create a CBOM'
+name: PQC Action
+description: Run the Post Quantum Research CodeQL queries and create a CBOM
 inputs:
   codeql-version:
-    description: 'CodeQL bundle version'
+    description: CodeQL bundle version
     required: false
-    default: 'v2.22.3'
+    default: v2.22.3
   language:
-    description: 'The language to analyze'
+    description: The language to analyze
+    required: true
+  external-access-token:
+    description: Access token for PQC repo - not needed when public
     required: true
 runs:
-  using: "composite"
+  using: composite
   steps:
     - uses: github/codeql-action/init@v2.22.3
       name: CodeQL init
       with:
         languages: ${{ inputs.language }}
         queries: pre-quantum-research/PQC/${{ inputs.language }}/src/suites/cbom.qls@main
+        external-access-token: ${{ inputs.external-access-token }}
     - uses: github/codeql-action/autobuild@v2.22.3
       name: CodeQL autobuild
     - uses: github/codeql-action/analyze@v2.22.3
       name: CodeQL analyze
       with:
-        category: "/pqc:${{ inputs.language }}"
+        category: /pqc:${{ inputs.language }}
         upload: never
         add-snippets: true
         upload-database: false
