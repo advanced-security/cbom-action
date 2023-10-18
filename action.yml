@@ -4,20 +4,20 @@ inputs:
   codeql-version:
     description: 'CodeQL bundle version'
     required: false
-    default: '2.22.3'
+    default: 'v2.22.3'
   language:
     description: 'The language to analyze'
     required: true
 runs:
   using: "composite"
   steps:
-    - uses: github/codeql-action/init@${{ inputs.codeql-version }}
+    - uses: github/codeql-action/init@v2.22.3
       name: CodeQL init
       with:
         languages: ${{ inputs.language }}
-    - uses: github/codeql-action/autobuild@${{ inputs.codeql-version }}
+    - uses: github/codeql-action/autobuild@v2.22.3
       name: CodeQL autobuild
-    - uses: github/codeql-action/analyze@${{ inputs.codeql-version }}
+    - uses: github/codeql-action/analyze@v2.22.3
       name: CodeQL analyze
       with:
-        category: "/pqc:${{ matrix.language }}"
+        category: "/pqc:${{ inputs.language }}"
