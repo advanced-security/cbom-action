@@ -2,6 +2,11 @@ name: Run PQC
 
 on: workflow_dispatch
 
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
 jobs:
   run-pqc:
     runs-on: ubuntu-latest
