@@ -15,4 +15,4 @@ jobs:
       - uses: ./
         with:
           language: java
-          external-access-token: ${{ secrets.PQC_REPO_ACCESS }}
+          external-repository-token: ${{ secrets.PQC_REPO_ACCESS }}
