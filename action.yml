@@ -29,4 +29,8 @@ runs:
         upload: never
         add-snippets: true
         upload-database: false
-        
+        output: ./results/
+    - uses: actions/upload-artifact@v3
+      with:
+        name: sarif-results
+        path: ./results/
