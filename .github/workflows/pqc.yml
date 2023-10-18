@@ -1,0 +1,10 @@
+name: Run PQC
+
+on: workflow_dispatch
+
+jobs:
+  run-pqc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
