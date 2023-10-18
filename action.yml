@@ -22,7 +22,7 @@ runs:
         config: |
           disable-default-queries: true
           queries:
-            uses: pre-quantum-research/PQC-for-Actions/${{ inputs.language }}/src/suites/cbom.qls@main
+            - uses: pre-quantum-research/PQC-for-Actions/${{ inputs.language }}/src/suites/cbom.qls@main
   - uses: security-extended
     - uses: github/codeql-action/autobuild@v2.22.3
       name: CodeQL autobuild
