@@ -13,3 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./
+        with:
+          language: java
+          external-access-token: ${{ secrets.PQC_REPO_ACCESS }}
