@@ -1,19 +1,23 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
-
-# Define your inputs here.
+name: 'PQC Action'
+description: 'Run the Post Quantum Research CodeQL queries and create a CBOM'
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  codeql-version:
+    description: 'CodeQL bundle version'
+    required: false
+    default: '2.22.3'
+  language:
+    description: 'The language to analyze'
     required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
-
 runs:
-  using: node20
-  main: dist/index.js
+  using: "composite"
+  steps:
+    - uses: github/codeql-action/init@${{ inputs.codeql-version }}
+      name: CodeQL init
+      with:
+        languages: ${{ inputs.language }}
+    - uses: github/codeql-action/autobuild@${{ inputs.codeql-version }}
+      name: CodeQL autobuild
+    - uses: github/codeql-action/analyze@${{ inputs.codeql-version }}
+      name: CodeQL analyze
+      with:
+        category: "/pqc:${{ matrix.language }}"
