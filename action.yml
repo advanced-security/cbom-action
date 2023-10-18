@@ -15,9 +15,14 @@ runs:
       name: CodeQL init
       with:
         languages: ${{ inputs.language }}
+        queries: pre-quantum-research/PQC/${{ inputs.language }}/src/suites/cbom.qls@main
     - uses: github/codeql-action/autobuild@v2.22.3
       name: CodeQL autobuild
     - uses: github/codeql-action/analyze@v2.22.3
       name: CodeQL analyze
       with:
         category: "/pqc:${{ inputs.language }}"
+        upload: never
+        add-snippets: true
+        upload-database: false
+        
