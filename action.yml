@@ -18,7 +18,7 @@ runs:
       name: CodeQL init
       with:
         languages: ${{ inputs.language }}
-        queries: pre-quantum-research/PQC/${{ inputs.language }}/src/suites/cbom.qls@main
+        queries: pre-quantum-research/PQC-for-Actions/${{ inputs.language }}/src/suites/cbom.qls@main
         external-repository-token: ${{ inputs.external-repository-token }}
     - uses: github/codeql-action/autobuild@v2.22.3
       name: CodeQL autobuild
