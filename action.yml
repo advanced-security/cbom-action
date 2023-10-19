@@ -35,5 +35,5 @@ runs:
         output: ./results/
     - uses: actions/upload-artifact@v3
       with:
-        name: sarif-results
+        name: pqc-results
         path: ./results/
