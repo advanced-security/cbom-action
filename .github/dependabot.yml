@@ -7,11 +7,3 @@ updates:
       - actions
     schedule:
       interval: daily
-
-  - package-ecosystem: npm
-    directory: /
-    labels:
-      - dependabot
-      - npm
-    schedule:
-      interval: daily
