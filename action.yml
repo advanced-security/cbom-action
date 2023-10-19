@@ -21,6 +21,7 @@ runs:
           -H "X-GitHub-Api-Version: 2022-11-28" \
           /repos/${{ github.repository }}/code-scanning/codeql/databases/${{ inputs.language }} \
           >> ${{ github.repository_owner }}-$REPO_NAME-${{ inputs.language }}-codeql-db.zip
+      shell: bash
     - uses: github/codeql-action/init@v2.22.3
       name: CodeQL init
       with:
