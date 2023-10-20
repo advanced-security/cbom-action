@@ -8,8 +8,8 @@ inputs:
   language:
     description: The language to analyze
     required: true
-  external-repository-token:
-    description: Access token for PQC repo - not needed when public
+  pqc-pack-read-token:
+    description: Access token for PQC query pack read - not needed when public
     required: true
 runs:
   using: composite
@@ -17,6 +17,8 @@ runs:
     - name: Set up env
       shell: bash
       run: |
+        echo "::add-mask::$PQC_PACK_READ_TOKEN"
+        echo "PQC_PACK_READ_TOKEN=${{ inputs.pqc-pack-read-token }}"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "PQC_QUERY_PACK_PATH=${{ github.workspace }}/pqc-for-actions/${{ inputs.language }}/src/" >> "$GITHUB_ENV"
     - name: Download CodeQL DB
@@ -35,12 +37,6 @@ runs:
           mkdir ${{ github.workspace }}/codeql-db
           (shopt -s dotglob; mv * ${{ github.workspace }}/codeql-db)
         fi
-    - name: Checkout PQC queries
-      uses: actions/checkout@v4
-      with:
-        repository: pre-quantum-research/PQC-for-Actions
-        path: pqc-for-actions
-        token: ${{ inputs.external-repository-token }}
     - name: Install latest CodeQL
       shell: bash
       run: |
@@ -59,6 +55,7 @@ runs:
       run: |
         $SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ github.repository }}
         mkdir -p ${SARIF_DIR_PATH}
+        export GITHUB_TOKEN=${PQC_PACK_READ_TOKEN}
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
         ${PQC_QUERY_PACK_PATH}/suites/cbom.qls \
         --output=${SARIF_DIR_PATH}/${{ inputs.language }}.sarif \
