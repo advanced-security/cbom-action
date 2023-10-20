@@ -1,10 +1,10 @@
 name: PQC Action
 description: Run the Post Quantum Research CodeQL queries and create a CBOM
 inputs:
-  codeql-version:
-    description: CodeQL bundle version
+  repository:
+    description: The repository to analyze
     required: false
-    default: v2.22.3
+    default: ${{ github.repository }}
   language:
     description: The language to analyze
     required: true
@@ -17,16 +17,19 @@ runs:
     - name: Set up env
       shell: bash
       run: |
+        IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repository }}
+        echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
+        echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
     - name: Download CodeQL DB
       shell: bash
       run: |
         set -ex
-        CODEQL_DB_NAME=${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ inputs.language }}-codeql-db.zip
+        CODEQL_DB_NAME=${{ env.REPO_OWNER }}-${{ env.REPO_NAME }}-${{ inputs.language }}-codeql-db.zip
         gh api \
           -H "Accept: application/zip" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
-          /repos/${{ github.repository }}/code-scanning/codeql/databases/${{ inputs.language }} >> ${CODEQL_DB_NAME}
+          /repos/${{ inputs.repository }}/code-scanning/codeql/databases/${{ inputs.language }} >> ${CODEQL_DB_NAME}
         echo "NO_STORED_DB=$?" >> "$GITHUB_ENV"
         if [ $? -eq 0 ]; then
           unzip -q -d database/ ${CODEQL_DB_NAME}
@@ -51,7 +54,7 @@ runs:
       shell: bash
       run: |
         set -ex
-        SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ github.repository }}
+        SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repository }}
         mkdir -p ${SARIF_DIR_PATH}
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
         pre-quantum-research/${{ inputs.language }}-cryptography \
