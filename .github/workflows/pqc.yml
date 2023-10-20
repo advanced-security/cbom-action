@@ -21,38 +21,43 @@ jobs:
       repos: ${{ steps.run.outputs.repos }}}
     steps:
       - run: |
-          DEP_GRAPH=(gh api graphql -F owner="${{ github.repository_owner }}" -F name="${{ github.event.repository.name }}" -f query="
-            query getDependencyGraph ($owner: String!, $name: String!) {
-              repository(owner: $owner, name: $name) {
-                  name
-                  dependencyGraphManifests {
+          REPOS=$(
+            gh api graphql \
+            -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
+            -f query='
+                query getDependencyGraph {
+                  repository(owner: "ctcampbell", name: "webgoat") {
+                    name
+                    dependencyGraphManifests {
                       totalCount
                       edges {
-                          node {
-                              filename
-                              dependencies {
-                                  edges {
-                                      node {
-                                          packageName
-                                          packageManager
-                                          requirements
-                                          repository {
-                                              nameWithOwner
-                                          }
-                                      }
-                                  }
+                        node {
+                          filename
+                          dependencies {
+                            edges {
+                              node {
+                                packageName
+                                packageManager
+                                requirements
+                                repository {
+                                  nameWithOwner
+                                }
                               }
+                            }
                           }
+                        }
                       }
+                    }
                   }
-              }
-            }
-          ")
-          MATRIX_REPOS=(jq -r '[.data.repository.dependencyGraphManifests.edges[].node | \
-            select(.filename | contains(".github/workflows") | not) | \
-            .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | \
-            unique' <<< "${DEP_GRAPH}")
-          echo "MATRIX_REPOS=${MATRIX_REPOS}" >> "$GITHUB_OUTPUT"
+                }
+              ' \
+            | jq -r \
+                '[.data.repository.dependencyGraphManifests.edges[].node | 
+                select(.filename | contains(".github/workflows") | not) | 
+                .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | 
+                unique'
+          )
+          echo "REPOS=${REPOS}" >> "$GITHUB_OUTPUT"
         id: run
         shell: bash
   run-pqc-action:
