@@ -14,10 +14,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Set up env
+      run: echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
     - name: Download CodeQL DB
       shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
       run: |
         set -ex
         CODEQL_DB_NAME=${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ inputs.language }}-codeql-db.zip
@@ -39,8 +39,6 @@ runs:
         token: ${{ inputs.external-repository-token }}
     - name: Install latest CodeQL
       shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
       run: |
         set -ex
         gh extensions install github/gh-codeql
