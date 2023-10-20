@@ -56,7 +56,7 @@ runs:
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
         ${{ github.workspace }}/pre-quantum-research/PQC-for-Actions/${{ inputs.language }}/suites/cbom.qls \
         --output=${{ github.workspace }}/pqc-results/${{github.repository }}/${{ inputs.language }}.sarif \
-        --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
+        --format=sarif-latest --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
     - uses: actions/upload-artifact@v3
       with:
         name: pqc-results
