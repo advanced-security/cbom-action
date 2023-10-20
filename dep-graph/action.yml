@@ -8,7 +8,7 @@ inputs:
 outputs:
   repos:
     description: The repositories to analyze
-    value: ${{ steps.run.outputs.repos }}}
+    value: ${{ steps.run.outputs.repos }}
 runs:
   using: composite
   steps:
@@ -55,3 +55,4 @@ runs:
               unique | .+ ["${{ inputs.repository }}"]'
           echo EOF
         } >> "$GITHUB_OUTPUT"
+        echo '${{ steps.run.outputs.repos }}'
