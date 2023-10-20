@@ -25,7 +25,7 @@ runs:
       shell: bash
       continue-on-error: true
       run: |
-        set -ex
+        set -x
         CODEQL_DB_NAME=${{ env.REPO_OWNER }}-${{ env.REPO_NAME }}-${{ inputs.language }}-codeql-db.zip
         gh api \
           -H "Accept: application/zip" \

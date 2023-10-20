@@ -36,5 +36,5 @@ jobs:
       - uses: ./analyze
         with:
           repository: ${{ matrix.repository }}
-          language: python
+          language: ${{ matrix.language }}
           pqc-pack-read-token: ${{ secrets.PQC_FOR_ACTIONS_PACK_READ }}
