@@ -53,7 +53,7 @@ jobs:
                       }
                     }
                   }
-              ' 
+              ' \
             | jq -r \
                 '[.data.repository.dependencyGraphManifests.edges[].node | 
                 select(.filename | contains(".github/workflows") | not) | 
