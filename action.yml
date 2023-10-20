@@ -17,8 +17,7 @@ runs:
     - name: Set up env
       shell: bash
       run: |
-        echo "::add-mask::$PQC_PACK_READ_TOKEN"
-        echo "PQC_PACK_READ_TOKEN=${{ inputs.pqc-pack-read-token }}" >> "$GITHUB_ENV"
+        echo "::add-mask::${{ inputs.pqc-pack-read-token }}"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
     - name: Download CodeQL DB
       shell: bash
@@ -42,6 +41,7 @@ runs:
         set -ex
         gh extensions install github/gh-codeql
         gh codeql download
+        GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} gh codeql pack download pre-quantum-research/python-cryptography
     - name: Create CodeQL DB
       if: env.NO_STORED_DB != 0
       shell: bash
@@ -54,7 +54,6 @@ runs:
         set -ex
         SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ github.repository }}
         mkdir -p ${SARIF_DIR_PATH}
-        export GITHUB_TOKEN=${PQC_PACK_READ_TOKEN}
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
         pre-quantum-research/${{ inputs.language }}-cryptography \
         --output=${SARIF_DIR_PATH}/${{ inputs.language }}.sarif \
