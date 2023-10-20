@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "**/action.yml"
+      - ".github/workflows/pqc.yml"
 
 permissions:
   actions: read
