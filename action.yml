@@ -53,7 +53,7 @@ runs:
       shell: bash
       run: |
         set -ex
-        $SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ github.repository }}
+        SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ github.repository }}
         mkdir -p ${SARIF_DIR_PATH}
         export GITHUB_TOKEN=${PQC_PACK_READ_TOKEN}
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
