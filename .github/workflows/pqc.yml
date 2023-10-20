@@ -14,9 +14,14 @@ permissions:
 jobs:
   run-pqc-action:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repository: ["${{ github.repository }}", "numpy/numpy", "python/cpython"]
     steps:
       - uses: actions/checkout@v4
       - uses: ./
         with:
+          repository: ${{ matrix.repository }}
           language: python
           pqc-pack-read-token: ${{ secrets.PQC_FOR_ACTIONS_PACK_READ }}
