@@ -23,26 +23,28 @@ jobs:
     steps:
       - run: |
           set -ex
-          REPOS=$(
+          {
+            echo 'REPOS<<EOF'
             gh api graphql \
-            -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
-            -f query='
-                query getDependencyGraph {
-                  repository(owner: "ctcampbell", name: "webgoat") {
-                    name
-                    dependencyGraphManifests {
-                      totalCount
-                      edges {
-                        node {
-                          filename
-                          dependencies {
-                            edges {
-                              node {
-                                packageName
-                                packageManager
-                                requirements
-                                repository {
-                                  nameWithOwner
+              -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
+              -f query='
+                  query getDependencyGraph {
+                    repository(owner: "ctcampbell", name: "webgoat") {
+                      name
+                      dependencyGraphManifests {
+                        totalCount
+                        edges {
+                          node {
+                            filename
+                            dependencies {
+                              edges {
+                                node {
+                                  packageName
+                                  packageManager
+                                  requirements
+                                  repository {
+                                    nameWithOwner
+                                  }
                                 }
                               }
                             }
@@ -51,15 +53,14 @@ jobs:
                       }
                     }
                   }
-                }
-              ' \
+              ' 
             | jq -r \
                 '[.data.repository.dependencyGraphManifests.edges[].node | 
                 select(.filename | contains(".github/workflows") | not) | 
                 .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | 
                 unique'
-          )
-          echo "REPOS='${REPOS}'" >> "$GITHUB_OUTPUT"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
         id: run
         shell: bash
   run-pqc-action:
