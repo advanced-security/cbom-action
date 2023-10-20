@@ -43,16 +43,16 @@ runs:
         set -ex
         gh extensions install github/gh-codeql
         gh codeql download
-        cd ${PQC_QUERY_PACK_PATH}
-        gh codeql pack install
     - name: Create CodeQL DB
       if: env.NO_STORED_DB != 0
       shell: bash
       run: |
+        set -ex
         gh codeql database create --language ${{ inputs.language }} ${{ github.workspace }}/codeql-db
     - name: CodeQL analyze
       shell: bash
       run: |
+        set -ex
         $SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ github.repository }}
         mkdir -p ${SARIF_DIR_PATH}
         export GITHUB_TOKEN=${PQC_PACK_READ_TOKEN}
