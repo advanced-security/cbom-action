@@ -16,7 +16,9 @@ runs:
   steps:
     - name: Set up env
       shell: bash
-      run: echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
+      run: |
+        echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
+        echo "PQC_QUERY_PACK_PATH=${{ github.workspace }}/pqc-for-actions/${{ inputs.language }}/src/" >> "$GITHUB_ENV"
     - name: Download CodeQL DB
       shell: bash
       run: |
@@ -44,7 +46,9 @@ runs:
       run: |
         set -ex
         gh extensions install github/gh-codeql
-        gh codeql download  
+        gh codeql download
+        cd ${PQC_QUERY_PACK_PATH}
+        gh codeql pack install
     - name: Create CodeQL DB
       if: env.NO_STORED_DB != 0
       shell: bash
@@ -55,7 +59,7 @@ runs:
       run: |
         mkdir ${{ github.workspace }}/pqc-results
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
-        ${{ github.workspace }}/pqc-for-actions/${{ inputs.language }}/src/suites/cbom.qls \
+        ${PQC_QUERY_PACK_PATH}/suites/cbom.qls \
         --output=${{ github.workspace }}/pqc-results/${{github.repository }}/${{ inputs.language }}.sarif \
         --format=sarif-latest --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
     - uses: actions/upload-artifact@v3
