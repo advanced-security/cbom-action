@@ -22,6 +22,7 @@ jobs:
       repos: ${{ steps.run.outputs.repos }}}
     steps:
       - run: |
+          # TODO: make this work if the graphql call fails
           set -ex
           {
             echo 'REPOS<<EOF'
@@ -29,7 +30,7 @@ jobs:
               -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
               -f query='
                   query getDependencyGraph {
-                    repository(owner: "ctcampbell", name: "webgoat") {
+                    repository(owner: "${{ github.repository_owner }}", name: "${{ github.event.repository.name }} }}") {
                       name
                       dependencyGraphManifests {
                         totalCount
@@ -58,7 +59,7 @@ jobs:
                 '[.data.repository.dependencyGraphManifests.edges[].node | 
                 select(.filename | contains(".github/workflows") | not) | 
                 .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | 
-                unique'
+                unique += ["${{ github.repository }}"]'
             echo EOF
           } >> "$GITHUB_OUTPUT"
         id: run
