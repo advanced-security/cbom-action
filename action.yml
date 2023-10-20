@@ -29,8 +29,8 @@ runs:
         if [ $? -eq 0 ]; then
           unzip -d database/ ${CODEQL_DB_NAME}
           cd database/*
-          shopt -s dotglob
-          mv * ${{ github.workspace }}/codeql-db
+          mkdir ${{ github.workspace }}/codeql-db
+          (shopt -s dotglob; mv * ${{ github.workspace }}/codeql-db)
         fi
     - name: Checkout PQC queries
       uses: actions/checkout@v4
