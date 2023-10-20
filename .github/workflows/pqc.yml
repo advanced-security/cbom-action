@@ -59,7 +59,7 @@ jobs:
                 '[.data.repository.dependencyGraphManifests.edges[].node | 
                 select(.filename | contains(".github/workflows") | not) | 
                 .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | 
-                unique += ["${{ github.repository }}"]'
+                unique | .+ ["${{ github.repository }}"]'
             echo EOF
           } >> "$GITHUB_OUTPUT"
         id: run
