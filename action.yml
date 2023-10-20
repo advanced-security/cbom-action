@@ -17,7 +17,6 @@ runs:
     - name: Set up env
       shell: bash
       run: |
-        echo "::add-mask::${{ inputs.pqc-pack-read-token }}"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
     - name: Download CodeQL DB
       shell: bash
