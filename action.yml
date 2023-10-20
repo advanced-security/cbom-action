@@ -57,10 +57,11 @@ runs:
     - name: CodeQL analyze
       shell: bash
       run: |
-        mkdir ${{ github.workspace }}/pqc-results
+        $SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ github.repository }}
+        mkdir -p ${SARIF_DIR_PATH}
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
         ${PQC_QUERY_PACK_PATH}/suites/cbom.qls \
-        --output=${{ github.workspace }}/pqc-results/${{github.repository }}/${{ inputs.language }}.sarif \
+        --output=${SARIF_DIR_PATH}/${{ inputs.language }}.sarif \
         --format=sarif-latest --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
     - uses: actions/upload-artifact@v3
       with:
