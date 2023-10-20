@@ -14,38 +14,54 @@ inputs:
 runs:
   using: composite
   steps:
-    - run: |
-        REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}
-        CODEQL_DB_NAME=${{ github.repository_owner }}-${REPO_NAME}-${{ inputs.language }}-codeql-db.zip
+    - name: Download CodeQL DB
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -ex
+        CODEQL_DB_NAME=${{ github.repository_owner }}-${{ github. }}-${{ inputs.language }}-codeql-db.zip
         gh api \
           -H "Accept: application/zip" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           /repos/${{ github.repository }}/code-scanning/codeql/databases/${{ inputs.language }} \
           >> ${CODEQL_DB_NAME}
-        unzip ${CODEQL_DB_NAME}
+        # TODO: Set output env var to exit code
+        echo "NO_STORED_DB=${$?}" >> "$GITHUB_ENV"
+        if [ $? -eq 0 ]; then
+          unzip -d database/ ${CODEQL_DB_NAME}
+          cd database/*
+          shopt -s dotglob
+          mv * ${{ github.workspace }}/codeql-db
+    - name: Checkout PQC queries
+      uses: actions/checkout@v4
+      with:
+        repository: pre-quantum-research/PQC-for-Actions
+        token: ${{ inputs.external-repository-token }}
+    - name: Install latest CodeQL
       shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
-    - uses: github/codeql-action/init@v2.22.3
-      name: CodeQL init
-      with:
-        languages: ${{ inputs.language }}
-        external-repository-token: ${{ inputs.external-repository-token }}
-        config: |
-          disable-default-queries: true
-          queries:
-            - uses: pre-quantum-research/PQC-for-Actions/${{ inputs.language }}/src/suites/cbom.qls@main
-    - uses: github/codeql-action/autobuild@v2.22.3
-      name: CodeQL autobuild
-    - uses: github/codeql-action/analyze@v2.22.3
-      name: CodeQL analyze
-      with:
-        category: /pqc:${{ inputs.language }}
-        upload: never
-        add-snippets: true
-        upload-database: false
-        output: ./results/
+      run: |
+        set -ex
+        gh extensions install github/gh-codeql
+        gh codeql download  
+    - name: Create CodeQL DB
+      uses: github/codeql-action/init@v2.22.3
+      if: env.NO_STORED_DB
+      run: |
+        gh codeql database create --language ${{ inputs.language }} ${{ github.workspace }}/codeql-db
+    - name: CodeQL autobuild
+      uses: github/codeql-action/autobuild@v2.22.3
+      if: env.NO_STORED_DB
+    - name: CodeQL analyze
+      uses: github/codeql-action/analyze@v2.22.3
+      shell: bash
+      run: |
+        mkdir ${{ github.workspace }}/pqc-results
+        gh codeql database analyze ${{ github.workspace }}/codeql-db \
+        ${{ github.workspace }}/pre-quantum-research/PQC-for-Actions/${{ inputs.language }}/suites/cbom.qls \
+        --output=${{ github.workspace }}/pqc-results/${{github.repository }}/${{ inputs.language }}.sarif \
+        --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
     - uses: actions/upload-artifact@v3
       with:
         name: pqc-results
-        path: ./results/
+        path: ${{ github.workspace }}/pqc-results
