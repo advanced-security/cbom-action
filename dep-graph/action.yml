@@ -1,0 +1,57 @@
+name: PQC Build Dependency Graph Matrix Action
+description: Create a dependency matrix to pass to the PQC Analyze Action
+inputs:
+  repository:
+    description: The base repository to analyze
+    required: false
+    default: ${{ github.repository }}
+outputs:
+  repos:
+    description: The repositories to analyze
+    value: ${{ steps.run.outputs.repos }}}
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      run: |
+        # TODO: make this work if the graphql call fails
+        set -ex
+        {
+          echo 'REPOS<<EOF'
+          gh api graphql \
+            -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
+            -f query='
+                query getDependencyGraph {
+                  repository(owner: "${{ github.repository_owner }}", name: "${{ github.event.repository.name }}") {
+                    name
+                    dependencyGraphManifests {
+                      totalCount
+                      edges {
+                        node {
+                          filename
+                          dependencies {
+                            edges {
+                              node {
+                                packageName
+                                packageManager
+                                requirements
+                                repository {
+                                  nameWithOwner
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+            ' \
+          | jq -r \
+              '[.data.repository.dependencyGraphManifests.edges[].node | 
+              select(.filename | contains(".github/workflows") | not) | 
+              .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | 
+              unique | .+ ["${{ inputs.repository }}"]'
+          echo EOF
+        } >> "$GITHUB_OUTPUT"

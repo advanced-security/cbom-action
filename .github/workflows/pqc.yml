@@ -19,51 +19,13 @@ jobs:
   build-matrix:
     runs-on: ubuntu-latest
     outputs:
-      repos: ${{ steps.run.outputs.repos }}}
+      repos: ${{ steps.dep-graph.outputs.repos }}
     steps:
-      - run: |
-          # TODO: make this work if the graphql call fails
-          set -ex
-          {
-            echo 'REPOS<<EOF'
-            gh api graphql \
-              -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
-              -f query='
-                  query getDependencyGraph {
-                    repository(owner: "${{ github.repository_owner }}", name: "${{ github.event.repository.name }}") {
-                      name
-                      dependencyGraphManifests {
-                        totalCount
-                        edges {
-                          node {
-                            filename
-                            dependencies {
-                              edges {
-                                node {
-                                  packageName
-                                  packageManager
-                                  requirements
-                                  repository {
-                                    nameWithOwner
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-              ' \
-            | jq -r \
-                '[.data.repository.dependencyGraphManifests.edges[].node | 
-                select(.filename | contains(".github/workflows") | not) | 
-                .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | 
-                unique | .+ ["${{ github.repository }}"]'
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
-        id: run
-        shell: bash
+      - uses: actions/checkout@v4
+      - uses: ./dep-graph
+        id: dep-graph
+        with:
+          repository: numpy/numpy
   run-pqc-action:
     runs-on: ubuntu-latest
     needs: build-matrix

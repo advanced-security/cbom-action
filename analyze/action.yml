@@ -1,4 +1,4 @@
-name: PQC Action
+name: PQC Analyze Action
 description: Run the Post Quantum Research CodeQL queries and create a CBOM
 inputs:
   repository:
