@@ -62,4 +62,3 @@ runs:
               unique | .+ ["${{ inputs.repository }}"]'
           echo EOF
         } >> "$GITHUB_OUTPUT"
-        echo '${{ steps.run.outputs.repos }}'
