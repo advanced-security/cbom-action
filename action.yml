@@ -18,7 +18,7 @@ runs:
       shell: bash
       run: |
         echo "::add-mask::$PQC_PACK_READ_TOKEN"
-        echo "PQC_PACK_READ_TOKEN=${{ inputs.pqc-pack-read-token }}"
+        echo "PQC_PACK_READ_TOKEN=${{ inputs.pqc-pack-read-token }}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "PQC_QUERY_PACK_PATH=${{ github.workspace }}/pqc-for-actions/${{ inputs.language }}/src/" >> "$GITHUB_ENV"
     - name: Download CodeQL DB
