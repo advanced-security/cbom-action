@@ -19,4 +19,4 @@ jobs:
       - uses: ./
         with:
           language: python
-          external-repository-token: ${{ secrets.PQC_REPO_ACCESS }}
+          pqc-pack-read-token: ${{ secrets.PQC_FOR_ACTIONS_PACK_READ }}
