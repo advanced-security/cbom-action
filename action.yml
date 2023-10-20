@@ -45,15 +45,10 @@ runs:
         gh extensions install github/gh-codeql
         gh codeql download  
     - name: Create CodeQL DB
-      uses: github/codeql-action/init@v2.22.3
       if: env.NO_STORED_DB
       run: |
         gh codeql database create --language ${{ inputs.language }} ${{ github.workspace }}/codeql-db
-    - name: CodeQL autobuild
-      uses: github/codeql-action/autobuild@v2.22.3
-      if: env.NO_STORED_DB
     - name: CodeQL analyze
-      uses: github/codeql-action/analyze@v2.22.3
       shell: bash
       run: |
         mkdir ${{ github.workspace }}/pqc-results
