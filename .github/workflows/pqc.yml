@@ -69,6 +69,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        language: ["cpp", "csharp", "go", "java", "python"]
         repository: ${{ fromJSON(needs.build-matrix.outputs.repos) }}
     steps:
       - uses: actions/checkout@v4

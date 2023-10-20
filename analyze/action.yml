@@ -24,7 +24,6 @@ runs:
     - name: Download CodeQL DB
       shell: bash
       run: |
-        set -ex
         CODEQL_DB_NAME=${{ env.REPO_OWNER }}-${{ env.REPO_NAME }}-${{ inputs.language }}-codeql-db.zip
         gh api \
           -H "Accept: application/zip" \
