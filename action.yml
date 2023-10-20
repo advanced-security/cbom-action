@@ -20,7 +20,7 @@ runs:
         GH_TOKEN: ${{ github.token }}
       run: |
         set -ex
-        CODEQL_DB_NAME=${{ github.repository_owner }}-${{ github. }}-${{ inputs.language }}-codeql-db.zip
+        CODEQL_DB_NAME=${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ inputs.language }}-codeql-db.zip
         gh api \
           -H "Accept: application/zip" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
