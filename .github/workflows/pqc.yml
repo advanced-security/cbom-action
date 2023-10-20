@@ -11,16 +11,60 @@ permissions:
   contents: read
   security-events: write
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
+  build-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.run.outputs.repos }}}
+    steps:
+      - run: |
+          DEP_GRAPH=(gh api graphql -F owner="${{ github.repository_owner }}" -F name="${{ github.event.repository.name }}" -f query="
+            query getDependencyGraph ($owner: String!, $name: String!) {
+              repository(owner: $owner, name: $name) {
+                  name
+                  dependencyGraphManifests {
+                      totalCount
+                      edges {
+                          node {
+                              filename
+                              dependencies {
+                                  edges {
+                                      node {
+                                          packageName
+                                          packageManager
+                                          requirements
+                                          repository {
+                                              nameWithOwner
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+            }
+          ")
+          MATRIX_REPOS=(jq -r '[.data.repository.dependencyGraphManifests.edges[].node | \
+            select(.filename | contains(".github/workflows") | not) | \
+            .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | \
+            unique' <<< "${DEP_GRAPH}")
+          echo "MATRIX_REPOS=${MATRIX_REPOS}" >> "$GITHUB_OUTPUT"
+        id: run
+        shell: bash
   run-pqc-action:
     runs-on: ubuntu-latest
+    needs: build-matrix
     strategy:
       fail-fast: false
       matrix:
-        repository: ["${{ github.repository }}", "numpy/numpy", "python/cpython"]
+        repository: ${{ needs.build-matrix.outputs.repos }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./
+      - uses: ./analyze
         with:
           repository: ${{ matrix.repository }}
           language: python
