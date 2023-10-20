@@ -58,7 +58,7 @@ jobs:
                 .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | 
                 unique'
           )
-          echo "REPOS=toJSON(${REPOS})" >> "$GITHUB_OUTPUT"
+          echo "REPOS=${REPOS}" >> "$GITHUB_OUTPUT"
         id: run
         shell: bash
   run-pqc-action:
