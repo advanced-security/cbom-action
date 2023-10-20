@@ -37,6 +37,7 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: pre-quantum-research/PQC-for-Actions
+        path: pqc-for-actions
         token: ${{ inputs.external-repository-token }}
     - name: Install latest CodeQL
       shell: bash
@@ -54,7 +55,7 @@ runs:
       run: |
         mkdir ${{ github.workspace }}/pqc-results
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
-        ${{ github.workspace }}/pre-quantum-research/PQC-for-Actions/${{ inputs.language }}/suites/cbom.qls \
+        ${{ github.workspace }}/pqc-for-actions/${{ inputs.language }}/suites/cbom.qls \
         --output=${{ github.workspace }}/pqc-results/${{github.repository }}/${{ inputs.language }}.sarif \
         --format=sarif-latest --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
     - uses: actions/upload-artifact@v3
