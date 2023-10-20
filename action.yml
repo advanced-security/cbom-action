@@ -30,7 +30,7 @@ runs:
           /repos/${{ github.repository }}/code-scanning/codeql/databases/${{ inputs.language }} >> ${CODEQL_DB_NAME}
         echo "NO_STORED_DB=$?" >> "$GITHUB_ENV"
         if [ $? -eq 0 ]; then
-          unzip -d database/ ${CODEQL_DB_NAME}
+          unzip -q -d database/ ${CODEQL_DB_NAME}
           cd database/*
           mkdir ${{ github.workspace }}/codeql-db
           (shopt -s dotglob; mv * ${{ github.workspace }}/codeql-db)
