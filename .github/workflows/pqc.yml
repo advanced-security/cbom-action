@@ -21,6 +21,7 @@ jobs:
       repos: ${{ steps.run.outputs.repos }}}
     steps:
       - run: |
+          set -ex
           REPOS=$(
             gh api graphql \
             -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
@@ -57,7 +58,7 @@ jobs:
                 .dependencies.edges[].node.repository | select(.nameWithOwner != null) | .nameWithOwner] | 
                 unique'
           )
-          echo "REPOS=${REPOS}" >> "$GITHUB_OUTPUT"
+          echo "REPOS=toJSON(${REPOS})" >> "$GITHUB_OUTPUT"
         id: run
         shell: bash
   run-pqc-action:
@@ -66,7 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        repository: ${{ needs.build-matrix.outputs.repos }}
+        repository: ${{ fromJSON(needs.build-matrix.outputs.repos) }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./analyze
