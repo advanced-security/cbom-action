@@ -55,7 +55,7 @@ runs:
       run: |
         mkdir ${{ github.workspace }}/pqc-results
         gh codeql database analyze ${{ github.workspace }}/codeql-db \
-        ${{ github.workspace }}/pqc-for-actions/${{ inputs.language }}/suites/cbom.qls \
+        ${{ github.workspace }}/pqc-for-actions/${{ inputs.language }}/src/suites/cbom.qls \
         --output=${{ github.workspace }}/pqc-results/${{github.repository }}/${{ inputs.language }}.sarif \
         --format=sarif-latest --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
     - uses: actions/upload-artifact@v3
