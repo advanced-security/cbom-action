@@ -62,5 +62,5 @@ runs:
         --format=sarif-latest --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
     - uses: actions/upload-artifact@v3
       with:
-        name: ${{ env.REPO_OWNER }}-${{ env.REPO_NAME }}-pqc-results
+        name: pqc-results
         path: ${{ github.workspace }}/pqc-results
