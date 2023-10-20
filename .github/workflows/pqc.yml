@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-    - 'action.yml'
+      - action.yml
 
 permissions:
   actions: read
