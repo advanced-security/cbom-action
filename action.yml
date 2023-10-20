@@ -39,6 +39,8 @@ runs:
         token: ${{ inputs.external-repository-token }}
     - name: Install latest CodeQL
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         set -ex
         gh extensions install github/gh-codeql
