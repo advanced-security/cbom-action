@@ -12,9 +12,6 @@ permissions:
   contents: read
   security-events: write
 
-env:
-  GH_TOKEN: ${{ github.token }}
-
 jobs:
   build-matrix:
     runs-on: ubuntu-latest

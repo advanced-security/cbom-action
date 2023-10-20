@@ -12,6 +12,13 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Set up env
+      shell: bash
+      run: |
+        IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repository }}
+        echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
+        echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
+        echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
     - id: run
       shell: bash
       run: |
@@ -23,7 +30,7 @@ runs:
             -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
             -f query='
                 query getDependencyGraph {
-                  repository(owner: "${{ github.repository_owner }}", name: "${{ github.event.repository.name }}") {
+                  repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
                     name
                     dependencyGraphManifests {
                       totalCount
