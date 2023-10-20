@@ -30,7 +30,7 @@ jobs:
               -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
               -f query='
                   query getDependencyGraph {
-                    repository(owner: "${{ github.repository_owner }}", name: "${{ github.event.repository.name }} }}") {
+                    repository(owner: "${{ github.repository_owner }}", name: "${{ github.event.repository.name }}") {
                       name
                       dependencyGraphManifests {
                         totalCount
