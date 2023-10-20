@@ -24,15 +24,14 @@ runs:
         gh api \
           -H "Accept: application/zip" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
-          /repos/${{ github.repository }}/code-scanning/codeql/databases/${{ inputs.language }} \
-          >> ${CODEQL_DB_NAME}
-        # TODO: Set output env var to exit code
+          /repos/${{ github.repository }}/code-scanning/codeql/databases/${{ inputs.language }} >> ${CODEQL_DB_NAME}
         echo "NO_STORED_DB=${$?}" >> "$GITHUB_ENV"
         if [ $? -eq 0 ]; then
           unzip -d database/ ${CODEQL_DB_NAME}
           cd database/*
           shopt -s dotglob
           mv * ${{ github.workspace }}/codeql-db
+        fi
     - name: Checkout PQC queries
       uses: actions/checkout@v4
       with:
