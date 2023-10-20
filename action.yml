@@ -46,6 +46,7 @@ runs:
         gh codeql download  
     - name: Create CodeQL DB
       if: env.NO_STORED_DB
+      shell: bash
       run: |
         gh codeql database create --language ${{ inputs.language }} ${{ github.workspace }}/codeql-db
     - name: CodeQL analyze
