@@ -46,11 +46,13 @@ runs:
         gh codeql download
         GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} gh codeql pack download pre-quantum-research/python-cryptography
     - name: Create CodeQL DB
-      if: env.NO_STORED_DB != 0
       shell: bash
       run: |
         set -ex
-        gh codeql database create --language ${{ inputs.language }} ${{ github.workspace }}/codeql-db
+        env
+        if [ $NO_STORED_DB -ne 0 ]; then
+          gh codeql database create --language ${{ inputs.language }} ${{ github.workspace }}/codeql-db
+        fi
     - name: CodeQL analyze
       shell: bash
       run: |
