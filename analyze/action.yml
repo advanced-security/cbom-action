@@ -42,7 +42,7 @@ runs:
         cd database/*
         mkdir ${{ github.workspace }}/codeql-db
         (shopt -s dotglob; mv * ${{ github.workspace }}/codeql-db)
-        ! gh codeql database upgrade ${{ github.workspace }}/codeql-db
+        gh codeql database upgrade ${{ github.workspace }}/codeql-db || true
     - name: Create CodeQL DB
       if: steps.download-codeql-db.outcome == 'failure'
       shell: bash -x {0}
