@@ -44,7 +44,7 @@ runs:
         (shopt -s dotglob; mv * ${{ github.workspace }}/codeql-db)
         ! gh codeql database upgrade ${{ github.workspace }}/codeql-db
     - name: Create CodeQL DB
-      if: ${{ steps.download-codeql-db.outcome == "failure" }}
+      if: steps.download-codeql-db.outcome == 'failure'
       shell: bash -x {0}
       run: |
         gh codeql database create --language ${{ inputs.language }} ${{ github.workspace }}/codeql-db
