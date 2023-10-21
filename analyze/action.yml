@@ -15,7 +15,7 @@ runs:
   using: composite
   steps:
     - name: Set up env
-      shell: bash -x
+      shell: bash -x {0}
       run: |
         IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repository }}
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
@@ -23,7 +23,7 @@ runs:
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
     - name: Download CodeQL DB
       id: download-codeql-db
-      shell: bash -ex
+      shell: bash -ex {0}
       continue-on-error: true
       run: |
         CODEQL_DB_NAME=${{ env.REPO_OWNER }}-${{ env.REPO_NAME }}-${{ inputs.language }}-codeql-db.zip
@@ -38,18 +38,18 @@ runs:
         (shopt -s dotglob; mv * ${{ github.workspace }}/codeql-db)
         gh codeql database upgrade ${{ github.workspace }}/codeql-db
     - name: Install latest CodeQL
-      shell: bash -x
+      shell: bash -x {0}
       run: |
         gh extensions install github/gh-codeql
         gh codeql download
         GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} gh codeql pack download pre-quantum-research/python-cryptography
     - name: Create CodeQL DB
       if: ${{ steps.download-codeql-db.outcome }} == "failure"
-      shell: bash -x
+      shell: bash -x {0}
       run: |
         gh codeql database create --language ${{ inputs.language }} ${{ github.workspace }}/codeql-db
     - name: CodeQL analyze
-      shell: bash -x
+      shell: bash -x {0}
       run: |
         SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repository }}
         mkdir -p ${SARIF_DIR_PATH}
