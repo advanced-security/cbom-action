@@ -31,8 +31,9 @@ runs:
           -H "Accept: application/zip" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           /repos/${{ inputs.repository }}/code-scanning/codeql/databases/${{ inputs.language }} >> ${CODEQL_DB_NAME}
-        echo "NO_STORED_DB=$?" >> "$GITHUB_ENV"
-        if [ $? -eq 0 ]; then
+        NO_STORED_DB=$?
+        echo "NO_STORED_DB=$NO_STORED_DB" >> "$GITHUB_ENV"
+        if [ $NO_STORED_DB -eq 0 ]; then
           unzip -q -d database/ ${CODEQL_DB_NAME}
           cd database/*
           mkdir ${{ github.workspace }}/codeql-db
