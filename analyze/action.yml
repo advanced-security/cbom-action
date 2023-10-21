@@ -21,6 +21,12 @@ runs:
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
         echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
+    - name: Install latest CodeQL
+      shell: bash -x {0}
+      run: |
+        gh extensions install github/gh-codeql
+        gh codeql download
+        GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} gh codeql pack download pre-quantum-research/python-cryptography        
     - name: Download CodeQL DB
       id: download-codeql-db
       shell: bash -ex {0}
@@ -37,12 +43,6 @@ runs:
         mkdir ${{ github.workspace }}/codeql-db
         (shopt -s dotglob; mv * ${{ github.workspace }}/codeql-db)
         gh codeql database upgrade ${{ github.workspace }}/codeql-db
-    - name: Install latest CodeQL
-      shell: bash -x {0}
-      run: |
-        gh extensions install github/gh-codeql
-        gh codeql download
-        GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} gh codeql pack download pre-quantum-research/python-cryptography
     - name: Create CodeQL DB
       if: ${{ steps.download-codeql-db.outcome }} == "failure"
       shell: bash -x {0}
