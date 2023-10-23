@@ -16,7 +16,7 @@ jobs:
   build-matrix:
     runs-on: ubuntu-latest
     outputs:
-      repos: ${{ steps.build-matrix-action.outputs.repositories }}
+      repositories: ${{ steps.build-matrix-action.outputs.repositories }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./build-matrix
