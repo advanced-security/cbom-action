@@ -1,0 +1,109 @@
+name: PQC Build Dependency Graph Matrix Action
+description: Create a dependency matrix to pass to the PQC Analyze Action
+inputs:
+  repositoryNameWithOwner:
+    description: The base repository to analyze
+    required: false
+    default: ${{ github.repository }}
+outputs:
+  repos:
+    description: The repositories to analyze
+    value: ${{ steps.run.outputs.repositories }}
+runs:
+  using: composite
+  steps:
+    - name: Set up env
+      shell: bash -ex {0}
+      run: |
+        IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repositoryNameWithOwner }}
+        echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
+        echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
+        echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
+    - id: run
+      shell: bash -ex {0}
+      run: |
+        # TODO: make this work if the graphql call fails due to dependency graph not being enabled
+        {
+          echo 'REPOS<<EOF'
+          gh api graphql \
+            -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
+            -f query='
+                query getDependencyGraphAndLanguages {
+                  repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
+                    nameWithOwner
+                    dependencyGraphManifests {
+                      totalCount
+                      edges {
+                        node {
+                          filename
+                          dependencies {
+                            edges {
+                              node {
+                                packageName
+                                packageManager
+                                requirements
+                                repository {
+                                  nameWithOwner
+                                  languages(first: 50) {
+                                    totalCount
+                                    pageInfo {
+                                      hasNextPage
+                                      endCursor
+                                    }
+                                    edges {
+                                      size
+                                      node {
+                                        name
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                    languages(first: 50) {
+                      totalCount
+                      pageInfo {
+                        hasNextPage
+                        endCursor
+                      }
+                      edges {
+                        size
+                        node {
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+            ' \
+          | jq -r '
+              .data.repository as $toprepo | 
+              [
+                $toprepo.dependencyGraphManifests.edges[].node | 
+                select(.filename | contains(".github/workflows") | not) | 
+                .dependencies.edges[].node.repository | 
+                select(.nameWithOwner != null) |
+                {
+                  nameWithOwner: .nameWithOwner,
+                  languages: [.languages.edges[].node.name | select(.|IN("Java","C++","Python","Go","C#"))]
+                }
+              ] |
+              [
+                unique | .[] | .nameWithOwner as $nameWithOwner | 
+                {
+                  nameWithOwner: $nameWithOwner, language: .languages[]
+                }
+              ] | .+ [
+                $toprepo.nameWithOwner as $nameWithOwner | 
+                [$toprepo.languages.edges[].node.name | select(.|IN("Java","C++","Python","Go","C#"))] as $languages | 
+                {
+                  nameWithOwner: $nameWithOwner, language: $languages[]
+                }
+              ]
+            '
+          echo EOF
+        } >> "$GITHUB_OUTPUT"

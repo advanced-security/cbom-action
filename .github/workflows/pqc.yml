@@ -16,11 +16,11 @@ jobs:
   build-matrix:
     runs-on: ubuntu-latest
     outputs:
-      repos: ${{ steps.dep-graph.outputs.repos }}
+      repos: ${{ steps.build-matrix-action.outputs.repositories }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./dep-graph
-        id: dep-graph
+      - uses: ./build-matrix
+        id: build-matrix-action
         with:
           repository: numpy/numpy
   run-pqc-action:
@@ -29,12 +29,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["cpp", "csharp", "go", "java", "python"]
-        repository: ${{ fromJSON(needs.build-matrix.outputs.repos) }}
+        repository: ${{ fromJSON(needs.build-matrix.outputs.repositories) }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./analyze
         with:
-          repository: ${{ matrix.repository }}
-          language: ${{ matrix.language }}
+          repository: ${{ fromJson(matrix.repository).nameWithOwner }}
+          language: ${{ fromJson(matrix.repository).language }}
           pqc-pack-read-token: ${{ secrets.PQC_FOR_ACTIONS_PACK_READ }}
