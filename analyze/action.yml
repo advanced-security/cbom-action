@@ -51,20 +51,20 @@ runs:
           -H "X-GitHub-Api-Version: 2022-11-28" \
           "https://api.github.com/repos/${{ inputs.repositoryNameWithOwner }}/code-scanning/codeql/databases/${{ inputs.language }}"
         codeql database unbundle ${CODEQL_DB_NAME} --target=${CODEQL_DB_PATH} --name=codeql-db
-        ls -lah ${CODEQL_DB_PATH}
-        codeql database upgrade codeql-db || true
+        ls -lah ${CODEQL_DB_PATH}/codeql-db
+        codeql database upgrade ${CODEQL_DB_PATH}/codeql-db || true
     - name: Create CodeQL DB
       if: steps.download-codeql-db.outcome == 'failure'
       shell: bash -ex {0}
       run: |
-        codeql database create --language ${{ inputs.language }} ${CODEQL_DB_PATH}
+        codeql database create --language ${{ inputs.language }} ${CODEQL_DB_PATH}/codeql-db
     - name: CodeQL analyze
       shell: bash -ex {0}
       run: |
         GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
         SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}
         mkdir -p ${SARIF_DIR_PATH}
-        codeql database analyze ${CODEQL_DB_PATH} \
+        codeql database analyze ${CODEQL_DB_PATH}/codeql-db \
           pre-quantum-research/${{ inputs.language }}-cryptography \
           --output=${SARIF_DIR_PATH}/${{ inputs.language }}.sarif \
           --format=sarif-latest --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
