@@ -107,3 +107,6 @@ runs:
             '
           echo EOF
         } >> "$GITHUB_OUTPUT"
+    - name: Check output
+      shell: bash
+      run: echo ${{ steps.run.outputs.repositories }}
