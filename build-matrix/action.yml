@@ -103,7 +103,7 @@ runs:
                 {
                   nameWithOwner: $nameWithOwner, language: $languages[]
                 }
-              ]
+              ] | tostring
             '
           echo EOF
         } >> "$GITHUB_OUTPUT"
