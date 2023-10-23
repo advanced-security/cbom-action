@@ -57,6 +57,7 @@ runs:
       if: steps.download-codeql-db.outcome == 'failure'
       shell: bash -ex {0}
       run: |
+        mkdir -p ${CODEQL_DB_PATH}/codeql-db
         codeql database create --language ${{ inputs.language }} ${CODEQL_DB_PATH}/codeql-db
     - name: CodeQL analyze
       shell: bash -ex {0}
