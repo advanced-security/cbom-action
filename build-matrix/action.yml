@@ -80,7 +80,7 @@ runs:
                   }
                 }
             ' \
-          | jq -r '
+          | jq -c '
               .data.repository as $toprepo | 
               [
                 $toprepo.dependencyGraphManifests.edges[].node | 
