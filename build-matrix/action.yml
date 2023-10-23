@@ -96,13 +96,13 @@ runs:
                 unique | .[] | .nameWithOwner as $nameWithOwner | 
                 {
                   nameWithOwner: $nameWithOwner, language: .languages[]
-                }
+                } | tostring
               ] | .+ [
                 $toprepo.nameWithOwner as $nameWithOwner | 
                 [$toprepo.languages.edges[].node.name | select(.|IN("Java","C++","Python","Go","C#"))] as $languages | 
                 {
                   nameWithOwner: $nameWithOwner, language: $languages[]
-                }
+                } | tostring
               ]
             '
           echo EOF
