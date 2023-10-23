@@ -1,7 +1,7 @@
 name: PQC Analyze Action
 description: Run the Post Quantum Research CodeQL queries and create a CBOM
 inputs:
-  repository:
+  repositoryNameWithOwner:
     description: The repository to analyze
     required: false
     default: ${{ github.repository }}
@@ -17,7 +17,7 @@ runs:
     - name: Set up env
       shell: bash -ex {0}
       run: |
-        IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repository }}
+        IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repositoryNameWithOwner }}
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
         echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
@@ -49,7 +49,7 @@ runs:
           -H "Accept: application/zip" \
           -H "Authorization: Bearer ${{ github.token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
-          "https://api.github.com/repos/${{ inputs.repository }}/code-scanning/codeql/databases/${{ inputs.language }}"
+          "https://api.github.com/repos/${{ inputs.repositoryNameWithOwner }}/code-scanning/codeql/databases/${{ inputs.language }}"
         codeql database unbundle ${CODEQL_DB_NAME} ${CODEQL_DB_PATH}
         codeql database upgrade ${CODEQL_DB_PATH} || true
     - name: Create CodeQL DB
@@ -61,7 +61,7 @@ runs:
       shell: bash -ex {0}
       run: |
         GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
-        SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repository }}
+        SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}
         mkdir -p ${SARIF_DIR_PATH}
         codeql database analyze ${CODEQL_DB_PATH} \
           pre-quantum-research/${{ inputs.language }}-cryptography \
