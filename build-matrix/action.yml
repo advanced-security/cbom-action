@@ -105,6 +105,7 @@ runs:
                 } | tostring
               ]
             ' \
-          | sed "s/C++/cpp/g; s/C#/csharp/g"
+          | sed "s/C++/cpp/g; s/C#/csharp/g" \
+          | tr '[:upper:]' '[:lower:]'
           echo EOF
         } >> "$GITHUB_OUTPUT"
