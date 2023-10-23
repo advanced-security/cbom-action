@@ -6,7 +6,7 @@ inputs:
     required: false
     default: ${{ github.repository }}
 outputs:
-  repos:
+  repositories:
     description: The repositories to analyze
     value: ${{ steps.run.outputs.repositories }}
 runs:
