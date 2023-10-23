@@ -24,7 +24,7 @@ runs:
       run: |
         # TODO: make this work if the graphql call fails due to dependency graph not being enabled
         {
-          echo 'REPOS<<EOF'
+          echo 'repositories<<EOF'
           gh api graphql \
             -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
             -f query='
