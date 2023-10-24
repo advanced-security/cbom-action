@@ -34,6 +34,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./analyze
         with:
-          repositoryNameWithOwner: ${{ fromJson(matrix.repository).nameWithOwner }}
-          language: ${{ fromJson(matrix.repository).language }}
+          repositoryNameWithOwner: ${{ fromJson(matrix.repository)[0] }}
+          language: ${{ fromJson(matrix.repository)[1] }}
           pqc-pack-read-token: ${{ secrets.PQC_FOR_ACTIONS_PACK_READ }}

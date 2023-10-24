@@ -22,41 +22,33 @@ runs:
     - id: run
       shell: bash -ex {0}
       run: |
-        # TODO: make this work if the graphql call fails due to dependency graph not being enabled
-        {
-          echo 'repositories<<EOF'
-          gh api graphql \
-            -H 'Accept: application/vnd.github.hawkgirl-preview+json' \
-            -f query='
-                query getDependencyGraphAndLanguages {
-                  repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
-                    nameWithOwner
-                    dependencyGraphManifests {
-                      totalCount
+        JSON=$(gh api graphql -H 'Accept: application/vnd.github.hawkgirl-preview+json' -f query='
+          query getDependencyGraphAndLanguages {
+            repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
+              nameWithOwner
+              dependencyGraphManifests {
+                totalCount
+                edges {
+                  node {
+                    filename
+                    dependencies {
                       edges {
                         node {
-                          filename
-                          dependencies {
-                            edges {
-                              node {
-                                packageName
-                                packageManager
-                                requirements
-                                repository {
-                                  nameWithOwner
-                                  languages(first: 50) {
-                                    totalCount
-                                    pageInfo {
-                                      hasNextPage
-                                      endCursor
-                                    }
-                                    edges {
-                                      size
-                                      node {
-                                        name
-                                      }
-                                    }
-                                  }
+                          packageName
+                          packageManager
+                          requirements
+                          repository {
+                            nameWithOwner
+                            languages(first: 50) {
+                              totalCount
+                              pageInfo {
+                                hasNextPage
+                                endCursor
+                              }
+                              edges {
+                                size
+                                node {
+                                  name
                                 }
                               }
                             }
@@ -64,48 +56,38 @@ runs:
                         }
                       }
                     }
-                    languages(first: 50) {
-                      totalCount
-                      pageInfo {
-                        hasNextPage
-                        endCursor
-                      }
-                      edges {
-                        size
-                        node {
-                          name
-                        }
-                      }
-                    }
                   }
                 }
-            ' \
-          | jq -c '
-              .data.repository as $toprepo | 
-              [
-                $toprepo.dependencyGraphManifests.edges[].node | 
-                select(.filename | contains(".github/workflows") | not) | 
-                .dependencies.edges[].node.repository | 
-                select(.nameWithOwner != null) |
-                {
-                  nameWithOwner: .nameWithOwner,
-                  languages: [.languages.edges[].node.name | select(.|IN("Java","C++","Python","Go","C#"))]
+              }
+              languages(first: 50) {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  endCursor
                 }
-              ] |
-              [
-                unique | .[] | .nameWithOwner as $nameWithOwner | 
-                {
-                  nameWithOwner: $nameWithOwner, language: .languages[]
-                } | tostring
-              ] | .+ [
-                $toprepo.nameWithOwner as $nameWithOwner | 
-                [$toprepo.languages.edges[].node.name | select(.|IN("Java","C++","Python","Go","C#"))] as $languages | 
-                {
-                  nameWithOwner: $nameWithOwner, language: $languages[]
-                } | tostring
-              ]
-            ' \
-          | sed "s/C++/cpp/g; s/C#/csharp/g" \
-          | tr '[:upper:]' '[:lower:]'
-          echo EOF
-        } >> "$GITHUB_OUTPUT"
+                edges {
+                  size
+                  node {
+                    name
+                  }
+                }
+              }
+            }
+          }
+        ')
+        REPOSITORIES=$(jq -c '
+          [.data.repository.nameWithOwner as $nameWithOwner | 
+          .data.repository.languages.edges[].node.name | 
+          select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
+          [$nameWithOwner, $language] | tostring] +
+          [.data.repository.dependencyGraphManifests.edges[].node | 
+          select(.filename|contains(".github/workflows")|not) | 
+          .dependencies.edges[].node.repository as $repository | 
+          $repository.nameWithOwner as $nameWithOwner | 
+          $repository.languages.edges[].node.name | 
+          select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
+          [$nameWithOwner, $language] | tostring]
+        ' <<< $JSON \
+        | sed 's/"C/"cpp/g; s/"C++/"cpp/g; s/"C#/"csharp/g' \
+        | tr '[:upper:]' '[:lower:]')
+        echo "repositories=$REPOSITORIES" >> "$GITHUB_OUTPUT"
