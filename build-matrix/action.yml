@@ -79,14 +79,14 @@ runs:
           [.data.repository.nameWithOwner as $nameWithOwner | 
           .data.repository.languages.edges[].node.name | 
           select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
-          [$nameWithOwner, $language] | tostring] +
-          [.data.repository.dependencyGraphManifests.edges[].node | 
+          [$nameWithOwner, if $language == "C" then "C++" else $language end] | tostring] +
+          ([.data.repository.dependencyGraphManifests.edges[].node | 
           select(.filename|contains(".github/workflows")|not) | 
           .dependencies.edges[].node.repository as $repository | 
           $repository.nameWithOwner as $nameWithOwner | 
           $repository.languages.edges[].node.name | 
           select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
-          [$nameWithOwner, $language] | tostring]
+          [$nameWithOwner, if $language == "C" then "C++" else $language end] | tostring] | unique)
         ' <<< $JSON \
         | sed 's/"C/"cpp/g; s/"C++/"cpp/g; s/"C#/"csharp/g' \
         | tr '[:upper:]' '[:lower:]')
