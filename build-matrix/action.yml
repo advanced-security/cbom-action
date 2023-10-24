@@ -75,6 +75,7 @@ runs:
             }
           }
         ')
+        # TODO: add option to filter language on size (e.g. only include languages with more than 10000 bytes)
         REPOSITORIES=$(jq -c '
           ([.data.repository.nameWithOwner as $nameWithOwner | 
           .data.repository.languages.edges[].node.name | 
