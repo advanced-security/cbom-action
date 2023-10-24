@@ -61,6 +61,7 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: ${{ inputs.repositoryNameWithOwner }}
+        path: ${{ inputs.repositoryNameWithOwner }}
     - name: Create CodeQL DB
       if: env.CODEQL_DB_DOWNLOADED != 'true'
       shell: bash -ex {0}
@@ -68,6 +69,7 @@ runs:
         if ! [ -d ${CODEQL_DB_PATH}/codeql-db ]
         then
           mkdir -p ${CODEQL_DB_PATH}/codeql-db
+          cd ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }}
           codeql database create --language ${{ inputs.language }} ${CODEQL_DB_PATH}/codeql-db
         fi
     - name: CodeQL analyze
