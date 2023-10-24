@@ -74,7 +74,6 @@ runs:
         fi
     - name: CodeQL analyze
       shell: bash -ex {0}
-      timeout-minutes: 10
       run: |
         GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
         SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}
