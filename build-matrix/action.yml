@@ -83,7 +83,8 @@ runs:
           [$nameWithOwner, if $language == "C" then "C++" else $language end] | tostring] | unique) +
           ([.data.repository.dependencyGraphManifests.edges[].node | 
           select(.filename|contains(".github/workflows")|not) | 
-          .dependencies.edges[].node.repository as $repository | 
+          .dependencies.edges[].node.repository as $repository |
+          select($repository != null) | 
           $repository.nameWithOwner as $nameWithOwner | 
           $repository.languages.edges[].node.name | 
           select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
