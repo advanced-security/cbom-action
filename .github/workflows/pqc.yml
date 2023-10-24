@@ -22,7 +22,7 @@ jobs:
       - uses: ./build-matrix
         id: build-matrix-action
         with:
-          repositoryNameWithOwner: numpy/numpy
+          repositoryNameWithOwner: ctcampbell/webgoat
   run-pqc-action:
     runs-on: ubuntu-latest
     needs: build-matrix
