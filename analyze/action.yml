@@ -23,7 +23,7 @@ runs:
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS=true" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS_CLASSPATH_FROM_BUILD_FILES=true" >> "$GITHUB_ENV"
-        echo "CODEQL_DB_PATH=${{ github.workspace }}/codeql-db" >> "$GITHUB_ENV"
+        echo "CODEQL_DB_PATH=${{ github.workspace }}" >> "$GITHUB_ENV"
     - name: Find or install CodeQL
       shell: bash -x {0}
       run: |
@@ -45,13 +45,12 @@ runs:
       continue-on-error: true
       run: |
         CODEQL_DB_NAME=${{ env.REPO_OWNER }}-${{ env.REPO_NAME }}-${{ inputs.language }}-codeql-db.zip
-        curl -L -o ${CODEQL_DB_NAME} \
+        curl -f -L -o ${CODEQL_DB_NAME} \
           -H "Accept: application/zip" \
           -H "Authorization: Bearer ${{ github.token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           "https://api.github.com/repos/${{ inputs.repositoryNameWithOwner }}/code-scanning/codeql/databases/${{ inputs.language }}"
         codeql database unbundle ${CODEQL_DB_NAME} --target=${CODEQL_DB_PATH} --name=codeql-db
-        ls -lah ${CODEQL_DB_PATH}/codeql-db
         codeql database upgrade ${CODEQL_DB_PATH}/codeql-db || true
     - name: Create CodeQL DB
       if: steps.download-codeql-db.outcome == 'failure'
