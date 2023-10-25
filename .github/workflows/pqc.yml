@@ -23,7 +23,7 @@ jobs:
       - uses: pre-quantum-research/pqc-action/build-matrix@main
         id: build-matrix-action
         with:
-          minimumLanguageBytes: 20000
+          minimumLanguageBytes: 2000
           analyzeDependencies: true
   run-pqc-action:
     name: PQC
