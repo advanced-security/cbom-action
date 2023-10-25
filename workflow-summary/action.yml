@@ -1,0 +1,20 @@
+name: PQC Workflow Summary Action
+description: Add a PQC analysis summary to a workflow run
+runs:
+  using: composite
+  steps:
+    - name: Unarchive results
+      uses: actions/download-artifact@v3
+      with:
+        name: pqc-results
+        path: ${{ github.workspace }}/pqc-results
+    - name: Post summary info
+      shell: bash -ex {0}
+      continue-on-error: true
+      run: |
+        cd ${{ github.workspace }}/pqc-results
+        echo "| Owner    | Repo    | Language    | Result Count    |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|---------|-------------|-----------------|" >> $GITHUB_STEP_SUMMARY
+        jq -cn 'foreach inputs as $i (0; . +1; "\(input_filename|rtrimstr(".sarif"))/\($i.runs[].results|length)")' **/*.sarif \
+        | xargs -I"{}" -L 1 bash -c 'IFS=/ read -r OWNER REPO LANGUAGE RESULT_COUNT <<< {};
+            echo "| ${OWNER} | ${REPO} | ${LANGUAGE} | ${RESULT_COUNT} |" >> $GITHUB_STEP_SUMMARY'

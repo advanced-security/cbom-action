@@ -84,7 +84,9 @@ runs:
           --format=sarifv2.1.0 --sarif-category="/pqc:${{ inputs.language }}" \
           --sarif-add-query-help --sarif-add-snippets \
           --timeout=300
-    - uses: actions/upload-artifact@v3
+    - name: Archive results
+      uses: actions/upload-artifact@v3
       with:
         name: pqc-results
         path: ${{ github.workspace }}/pqc-results
+
