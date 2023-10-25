@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   build-matrix:
+    name: Build analysis matrix
     runs-on: ubuntu-latest
     outputs:
       repositories: ${{ steps.build-matrix-action.outputs.repositories }}
@@ -26,6 +27,7 @@ jobs:
           minimumLanguageBytes: 20000
           analyzeDependencies: true
   run-pqc-action:
+    name: Run PQC Action
     runs-on: ubuntu-latest
     needs: build-matrix
     continue-on-error: true
@@ -42,6 +44,7 @@ jobs:
           upload-to-code-scanning: true
           pqc-pack-read-token: ${{ secrets.PQC_FOR_ACTIONS_PACK_READ }}
   add-workflow-summary:
+    name: PQC Action results
     runs-on: ubuntu-latest
     needs: run-pqc-action
     steps:
