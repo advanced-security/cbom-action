@@ -23,7 +23,6 @@ jobs:
       - uses: pre-quantum-research/pqc-action/build-matrix@main
         id: build-matrix-action
         with:
-          repositoryNameWithOwner: ctcampbell/webgoat
           minimumLanguageBytes: 20000
           analyzeDependencies: true
   run-pqc-action:
