@@ -31,7 +31,7 @@ runs:
       run: |
         # Find or install CodeQL
         echo "::group::Find or install CodeQL"
-        VERSION="$(find "/Volumes/ccampbell/GitHub/Infra/Docker/github-actions-runner/Data/_work/_tool/CodeQL/" -maxdepth 1 -mindepth 1 -type d -print \
+        VERSION="$(find "${{ runner.tool_cache }}/CodeQL/" -maxdepth 1 -mindepth 1 -type d -print \
           | sort \
           | tail -n 1 \
           | tr -d '\n')"
