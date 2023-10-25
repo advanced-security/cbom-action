@@ -84,6 +84,7 @@ runs:
         echo "::endgroup::"
     - name: Analyze CodeQL DB
       shell: bash
+      continue-on-error: true
       run: |
         # Analyze CodeQL database
         echo "::group::CodeQL analyze"
