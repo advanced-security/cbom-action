@@ -8,6 +8,10 @@ inputs:
   language:
     description: The language to analyze
     required: true
+  upload-to-code-scanning:
+    description: Whether to upload the results to GitHub Code Scanning
+    required: false
+    default: "false"
   pqc-pack-read-token:
     description: Access token for PQC query pack read - not needed when public
     required: true
@@ -26,6 +30,7 @@ runs:
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS_CLASSPATH_FROM_BUILD_FILES=true" >> "$GITHUB_ENV"
         echo "CODEQL_DB_PATH=${{ github.workspace }}" >> "$GITHUB_ENV"
         echo "CODEQL_DB_ZIP=codeql-db.zip" >> "$GITHUB_ENV"
+        echo "SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
     - name: Find or install CodeQL
       shell: bash
       run: |
@@ -90,7 +95,6 @@ runs:
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
         GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
-        SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}
         mkdir -p ${SARIF_DIR_PATH}
         codeql database analyze ${CODEQL_DB_PATH}/codeql-db \
           pre-quantum-research/${{ inputs.language }}-cryptography \
@@ -104,4 +108,9 @@ runs:
       with:
         name: pqc-results
         path: ${{ github.workspace }}/pqc-results
+    - name: Upload results to Code Scanning
+      if: inputs.upload-to-code-scanning == 'true'
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ${{ env.SARIF_DIR_PATH }}/${{ inputs.language }}.sarif
 

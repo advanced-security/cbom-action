@@ -38,6 +38,7 @@ jobs:
         with:
           repositoryNameWithOwner: ${{ fromJson(matrix.repository)[0] }}
           language: ${{ fromJson(matrix.repository)[1] }}
+          upload-to-code-scanning: true
           pqc-pack-read-token: ${{ secrets.PQC_FOR_ACTIONS_PACK_READ }}
   add-workflow-summary:
     runs-on: ubuntu-latest
