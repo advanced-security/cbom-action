@@ -17,6 +17,7 @@ runs:
     - name: Set up env
       shell: bash -ex {0}
       run: |
+        echo "::group::Set up env"
         IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repositoryNameWithOwner }}
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
         echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
@@ -25,9 +26,11 @@ runs:
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS_CLASSPATH_FROM_BUILD_FILES=true" >> "$GITHUB_ENV"
         echo "CODEQL_DB_PATH=${{ github.workspace }}" >> "$GITHUB_ENV"
         echo "CODEQL_DB_ZIP=codeql-db.zip" >> "$GITHUB_ENV"
+        echo "::endgroup::"
     - name: Find or install CodeQL
       shell: bash -x {0}
       run: |
+        echo "::group::Find or install CodeQL"
         VERSION="$(find "${{ runner.tool_cache }}/CodeQL/" -maxdepth 1 -mindepth 1 -type d -print \
           | sort \
           | tail -n 1 \
@@ -39,12 +42,14 @@ runs:
           gh extensions install github/gh-codeql
           gh codeql download
           gh codeql install-stub
-        fi       
+        fi
+        echo "::endgroup::"
     - name: Download CodeQL DB
       id: download-codeql-db
       shell: bash -ex {0}
       continue-on-error: true
       run: |
+        echo "::group::Download CodeQL DB"
         ! curl -f -L -o ${CODEQL_DB_ZIP} \
           -H "Accept: application/zip" \
           -H "Authorization: Bearer ${{ github.token }}" \
@@ -56,6 +61,7 @@ runs:
           codeql database upgrade ${CODEQL_DB_PATH}/codeql-db || true
           echo "CODEQL_DB_DOWNLOADED=true" >> "$GITHUB_ENV"
         fi
+        echo "::endgroup::"
     - name: Checkout
       if: env.CODEQL_DB_DOWNLOADED != 'true'
       uses: actions/checkout@v4
@@ -66,15 +72,18 @@ runs:
       if: env.CODEQL_DB_DOWNLOADED != 'true'
       shell: bash -ex {0}
       run: |
+        echo "::group::Create CodeQL DB"
         if ! [ -d ${CODEQL_DB_PATH}/codeql-db ]
         then
           mkdir -p ${CODEQL_DB_PATH}/codeql-db
           cd ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }}
           codeql database create --language ${{ inputs.language }} ${CODEQL_DB_PATH}/codeql-db
         fi
+        echo "::endgroup::"
     - name: CodeQL analyze
       shell: bash -ex {0}
       run: |
+        echo "::group::CodeQL analyze"
         GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
         SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}
         mkdir -p ${SARIF_DIR_PATH}
@@ -84,6 +93,7 @@ runs:
           --format=sarifv2.1.0 --sarif-category="/pqc:${{ inputs.language }}" \
           --sarif-add-query-help --sarif-add-snippets \
           --timeout=60
+        echo "::endgroup::"
     - name: Archive results
       uses: actions/upload-artifact@v3
       with:
