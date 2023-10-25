@@ -40,6 +40,7 @@ jobs:
           pqc-pack-read-token: ${{ secrets.PQC_FOR_ACTIONS_PACK_READ }}
   add-workflow-summary:
     runs-on: ubuntu-latest
+    needs: run-pqc-action
     steps:
       - uses: actions/checkout@v4
       - uses: ./workflow-summary
