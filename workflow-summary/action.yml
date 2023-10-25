@@ -13,7 +13,7 @@ runs:
       continue-on-error: true
       run: |
         # Post summary info to workflow run
-        echo "::group::Post summary info"
+        echo "::group::Post summary info to workflow run"
         cd ${{ github.workspace }}/pqc-results
         ls -lah
         echo "| Owner    | Repo    | Language    | Result Count    |" >> $GITHUB_STEP_SUMMARY

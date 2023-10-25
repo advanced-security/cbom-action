@@ -35,22 +35,23 @@ runs:
           | sort \
           | tail -n 1 \
           | tr -d '\n')"
-        if [ -z $VERSION ]
+        if [ -n "${VERSION}" ]
         then
           echo "$VERSION/x64/codeql" >> $GITHUB_PATH
+          echo "Using CodeQL at ${VERSION}"
         else
           gh extensions install github/gh-codeql
           gh codeql download
           gh codeql install-stub
         fi
-        echo "Using CodeQL at $(which codeql)"
         echo "::endgroup::"
     - name: Download CodeQL DB
       id: download-codeql-db
       shell: bash
       continue-on-error: true
       run: |
-        echo "::group::Download CodeQL DB"
+        # Download CodeQL database
+        echo "::group::Download CodeQL database"
         ! curl -f -L -o ${CODEQL_DB_ZIP} \
           -H "Accept: application/zip" \
           -H "Authorization: Bearer ${{ github.token }}" \
@@ -74,7 +75,7 @@ runs:
       shell: bash
       run: |
         # Create CodeQL database
-        echo "::group::Create CodeQL DB"
+        echo "::group::Create CodeQL database"
         if ! [ -d ${CODEQL_DB_PATH}/codeql-db ]
         then
           mkdir -p ${CODEQL_DB_PATH}/codeql-db
@@ -87,7 +88,7 @@ runs:
       continue-on-error: true
       run: |
         # Analyze CodeQL database
-        echo "::group::CodeQL analyze"
+        echo "::group::Analyze CodeQL database"
         GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
         SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}
         mkdir -p ${SARIF_DIR_PATH}
