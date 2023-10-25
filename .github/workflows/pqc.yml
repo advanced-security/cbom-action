@@ -27,7 +27,7 @@ jobs:
           minimumLanguageBytes: 20000
           analyzeDependencies: true
   run-pqc-action:
-    name: Run PQC Action
+    name: PQC
     runs-on: ubuntu-latest
     needs: build-matrix
     continue-on-error: true
