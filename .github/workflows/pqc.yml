@@ -23,6 +23,7 @@ jobs:
         id: build-matrix-action
         with:
           repositoryNameWithOwner: ctcampbell/webgoat
+          minimumLanguageBytes: 20000
   run-pqc-action:
     runs-on: ubuntu-latest
     needs: build-matrix
