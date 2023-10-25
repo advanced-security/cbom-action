@@ -19,7 +19,7 @@ jobs:
       repositories: ${{ steps.build-matrix-action.outputs.repositories }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./build-matrix
+      - uses: pre-quantum-research/pqc-action/build-matrix@main
         id: build-matrix-action
         with:
           repositoryNameWithOwner: ctcampbell/webgoat
@@ -34,7 +34,7 @@ jobs:
         repository: ${{ fromJSON(needs.build-matrix.outputs.repositories) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./analyze
+      - uses: pre-quantum-research/pqc-action/analyze@main
         with:
           repositoryNameWithOwner: ${{ fromJson(matrix.repository)[0] }}
           language: ${{ fromJson(matrix.repository)[1] }}
@@ -44,4 +44,4 @@ jobs:
     needs: run-pqc-action
     steps:
       - uses: actions/checkout@v4
-      - uses: ./workflow-summary
+      - uses: pre-quantum-research/pqc-action/workflow-summary@main

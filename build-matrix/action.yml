@@ -19,13 +19,17 @@ runs:
     - name: Set up env
       shell: bash -ex {0}
       run: |
+        # Set up environment variables
         IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repositoryNameWithOwner }}
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
         echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
-    - id: run
+    - name: Get dependency graph and code languages
+      id: run
       shell: bash -ex {0}
       run: |
+        # Get the dependency graph and code languages
+        echo "::group::Get the dependency graph and code languages"
         JSON=$(gh api graphql -H 'Accept: application/vnd.github.hawkgirl-preview+json' -f query='
           query getDependencyGraphAndLanguages {
             repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
@@ -79,7 +83,6 @@ runs:
             }
           }
         ')
-        # TODO: add option to filter language on size (e.g. only include languages with more than 10000 bytes)
         REPOSITORIES=$(jq -c '
           ([.data.repository.nameWithOwner as $nameWithOwner | 
           .data.repository.languages.edges[] | 
@@ -99,3 +102,4 @@ runs:
         | sed 's/\\\"C\\\"/\\\"cpp\\\"/g; s/\\\"C++\\\"/\\\"cpp\\\"/g; s/\\\"C#\\\"/\\\"csharp\\\"/g' \
         | tr '[:upper:]' '[:lower:]')
         echo "repositories=$REPOSITORIES" >> "$GITHUB_OUTPUT"
+        echo "::endgroup::"
