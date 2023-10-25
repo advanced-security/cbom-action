@@ -9,6 +9,10 @@ inputs:
     description: The minimum number of bytes a language must have to be included in the matrix
     required: false
     default: "5000"
+  analyzeDependencies:
+    description: Whether to analyze dependencies
+    required: false
+    default: "false"
 outputs:
   repositories:
     description: The repositories to analyze
@@ -84,20 +88,29 @@ runs:
           }
         ')
         REPOSITORIES=$(jq -c '
-          ([.data.repository.nameWithOwner as $nameWithOwner | 
-          .data.repository.languages.edges[] | 
-          select(.size >= ${{ inputs.minimumLanguageBytes }}).node.name |
-          select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
-          [$nameWithOwner, if $language == "C" then "C++" else $language end] | tostring] | unique) +
-          ([.data.repository.dependencyGraphManifests.edges[].node | 
-          select(.filename|contains(".github/workflows")|not) | 
-          .dependencies.edges[].node.repository as $repository |
-          select($repository != null) | 
-          $repository.nameWithOwner as $nameWithOwner | 
-          $repository.languages.edges[] | 
-          select(.size >= ${{ inputs.minimumLanguageBytes }}).node.name |
-          select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
-          [$nameWithOwner, if $language == "C" then "C++" else $language end] | tostring] | unique)
+          (
+            [
+              .data.repository.nameWithOwner as $nameWithOwner | 
+              .data.repository.languages.edges[] | 
+              select(.size >= 5000).node.name |
+              select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
+              [$nameWithOwner, if $language == "C" then "C++" else $language end] | tostring
+            ] | unique
+          ) as $targetrepo | 
+          (
+            [
+              .data.repository.dependencyGraphManifests.edges[].node | 
+              select(.filename|contains(".github/workflows")|not) | 
+              .dependencies.edges[].node.repository as $repository |
+              select($repository != null) | 
+              $repository.nameWithOwner as $nameWithOwner | 
+              $repository.languages.edges[] | 
+              select(.size >= 5000).node.name |
+              select(.|IN("Java","C","C++","Python","Go","C#")) as $language | 
+              [$nameWithOwner, if $language == "C" then "C++" else $language end] | tostring
+            ] | unique
+          ) as $dependencyrepos | 
+          if ("${{ inputs.analyzeDependencies }}" == "true") then $targetrepo + $dependencyrepos else $targetrepo end
         ' <<< $JSON \
         | sed 's/\\\"C\\\"/\\\"cpp\\\"/g; s/\\\"C++\\\"/\\\"cpp\\\"/g; s/\\\"C#\\\"/\\\"csharp\\\"/g' \
         | tr '[:upper:]' '[:lower:]')
