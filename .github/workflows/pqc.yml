@@ -33,7 +33,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./analyze
-        timeout-minutes: 10
         with:
           repositoryNameWithOwner: ${{ fromJson(matrix.repository)[0] }}
           language: ${{ fromJson(matrix.repository)[1] }}

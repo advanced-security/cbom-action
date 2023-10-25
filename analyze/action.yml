@@ -81,7 +81,9 @@ runs:
         codeql database analyze ${CODEQL_DB_PATH}/codeql-db \
           pre-quantum-research/${{ inputs.language }}-cryptography \
           --output=${SARIF_DIR_PATH}/${{ inputs.language }}.sarif \
-          --format=sarif-latest --sarif-add-snippets --sarif-category="/pqc:${{ inputs.language }}"
+          --format=sarifv2.1.0 --sarif-category="/pqc:${{ inputs.language }}"
+          --sarif-add-query-help --sarif-add-snippets
+          --timeout=300
     - uses: actions/upload-artifact@v3
       with:
         name: pqc-results
