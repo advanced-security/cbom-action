@@ -28,6 +28,7 @@ runs:
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS_CLASSPATH_FROM_BUILD_FILES=true" >> "$GITHUB_ENV"
         echo "CODEQL_DB_PATH=${{ github.workspace }}" >> "$GITHUB_ENV"
         echo "CODEQL_DB_ZIP=codeql-db.zip" >> "$GITHUB_ENV"
+        echo "CODEQL_RAM=$(awk '/MemTotal/ { printf "%.0f", $2/1024*0.8 }' /proc/meminfo)" >> "$GITHUB_ENV"
         echo "SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
     - name: Find or install CodeQL
       shell: bash
@@ -83,7 +84,7 @@ runs:
         then
           mkdir -p ${CODEQL_DB_PATH}/codeql-db
           cd ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }}
-          codeql database create --language ${{ inputs.language }} ${CODEQL_DB_PATH}/codeql-db
+          codeql database create --ram=$CODEQL_RAM --language ${{ inputs.language }} ${CODEQL_DB_PATH}/codeql-db
         fi
         echo "::endgroup::"
     - name: Analyze CodeQL DB
@@ -96,6 +97,7 @@ runs:
         mkdir -p ${SARIF_DIR_PATH}
         codeql database analyze ${CODEQL_DB_PATH}/codeql-db \
           pre-quantum-research/${{ inputs.language }}-cryptography \
+          --ram=$CODEQL_RAM \
           --output=${SARIF_DIR_PATH}/${{ inputs.language }}.sarif \
           --format=sarifv2.1.0 --sarif-category="PQC:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --sarif-add-query-help --sarif-add-snippets \
