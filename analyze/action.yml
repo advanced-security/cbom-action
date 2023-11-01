@@ -80,14 +80,14 @@ runs:
       run: |
         # Create CodeQL database
         echo "::group::Create CodeQL database"
-        gh issue create --repo pre-quantum-research/pqc-data \
-          --title ${{ inputs.repositoryNameWithOwner }}/$(git rev-parse HEAD) \
-          --label analysis-requested \
-          --body ""
         if ! [ -d ${CODEQL_DB_PATH}/codeql-db ]
         then
           mkdir -p ${CODEQL_DB_PATH}/codeql-db
           cd ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }}
+          gh issue create --repo pre-quantum-research/pqc-data \
+            --title ${{ inputs.repositoryNameWithOwner }}/$(git rev-parse HEAD) \
+            --label analysis-requested \
+            --body ""
           codeql database create --ram=$CODEQL_RAM --language ${{ inputs.language }} ${CODEQL_DB_PATH}/codeql-db
         fi
         echo "::endgroup::"
