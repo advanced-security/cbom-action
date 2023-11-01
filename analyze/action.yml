@@ -23,6 +23,7 @@ runs:
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
         echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
+        echo "GITHUB_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS=true" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS_CLASSPATH_FROM_BUILD_FILES=true" >> "$GITHUB_ENV"
         echo "CODEQL_DB_PATH=${{ github.workspace }}" >> "$GITHUB_ENV"
