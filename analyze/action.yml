@@ -12,9 +12,6 @@ inputs:
     description: Whether to upload the results to GitHub Code Scanning
     required: false
     default: "false"
-  pqc-pack-read-token:
-    description: Access token for PQC query pack read - not needed when public
-    required: true
 runs:
   using: composite
   steps:
@@ -94,7 +91,7 @@ runs:
       run: |
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
-        GITHUB_TOKEN=${{ inputs.pqc-pack-read-token }} codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
+        codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
         mkdir -p ${SARIF_DIR_PATH}
         codeql database analyze ${CODEQL_DB_PATH}/codeql-db \
           pre-quantum-research/${{ inputs.language }}-cryptography \
