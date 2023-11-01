@@ -65,7 +65,7 @@ runs:
         then
           codeql database unbundle ${CODEQL_DB_ZIP} --target=${CODEQL_DB_PATH} --name=codeql-db
           ! codeql database upgrade ${CODEQL_DB_PATH}/codeql-db
-          echo "CODEQL_DB_DOWNLOADED=true" >> "$GITHUB_ENV"
+          echo "CODEQL_DB_DOWNLOADED=true" >> "$GITHUB_ENV"        
         fi
         echo "::endgroup::"
     - name: Checkout analysis repository
@@ -80,6 +80,10 @@ runs:
       run: |
         # Create CodeQL database
         echo "::group::Create CodeQL database"
+        gh issue create --repo pre-quantum-research/pqc-data \
+          --title ${{ inputs.repositoryNameWithOwner }}/$(git rev-parse HEAD) \
+          --label analysis-requested \
+          --body ""
         if ! [ -d ${CODEQL_DB_PATH}/codeql-db ]
         then
           mkdir -p ${CODEQL_DB_PATH}/codeql-db
