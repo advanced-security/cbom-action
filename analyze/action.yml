@@ -100,7 +100,7 @@ runs:
               --method "POST" \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              "/repos/${{ inputs.repositoryNameWithOwner }}/issues/${ISSUE_NUMBER}/reactions" \
+              "/repos/pre-quantum-research/pqc-data/issues/${ISSUE_NUMBER}/reactions" \
               -f content="+1"
           else
             echo "Found multiple issues matching the search criteria"
