@@ -85,23 +85,21 @@ runs:
           mkdir -p "${CODEQL_DB_PATH}/codeql-db"
           cd ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }}
           SEARCH_RESULTS=$(gh issue list --repo pre-quantum-research/pqc-data \
-            --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}/$(git rev-parse HEAD)" \
+            --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
             --state open --json id,number,title)
           RESULT_COUNT=$(jq length <<< "${SEARCH_RESULTS}")
           if [[ ${RESULT_COUNT} -eq 0 ]]; then
             gh issue create \
               --repo pre-quantum-research/pqc-data \
-              --title ${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}/$(git rev-parse HEAD) \
+              --title ${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }} \
               --label analysis-requested \
-              --body ""
+              --body "$(git rev-parse HEAD)"
           elif [[ ${RESULT_COUNT} -eq 1 ]]; then
             ISSUE_NUMBER=$(jq -r ".[0].number" <<< "${SEARCH_RESULTS}")
-            gh api \
-              --method "POST" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "/repos/pre-quantum-research/pqc-data/issues/${ISSUE_NUMBER}/reactions" \
-              -f content="+1"
+            gh issue comment \
+              --repo pre-quantum-research/pqc-data \
+              ${ISSUE_NUMBER} \
+              --body "$(git rev-parse HEAD)"
           else
             echo "Found multiple issues matching the search criteria"
           fi
