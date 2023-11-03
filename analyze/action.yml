@@ -123,6 +123,7 @@ runs:
         fi
         echo "::endgroup::"
     - name: Analyze CodeQL DB
+      if: inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true'
       shell: bash
       continue-on-error: true
       run: |
@@ -139,12 +140,13 @@ runs:
           --timeout=${{ inputs.queryTimeout }}
         echo "::endgroup::"
     - name: Archive results
+      if: inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true'
       uses: actions/upload-artifact@v3
       with:
         name: pqc-results
         path: ${{ github.workspace }}/pqc-results
     - name: Upload results to Code Scanning
-      if: inputs.uploadToCodeScanning == 'true'
+      if: (inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true') && inputs.uploadToCodeScanning == 'true'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: ${{ env.SARIF_DIR_PATH }}/${{ inputs.language }}.sarif
