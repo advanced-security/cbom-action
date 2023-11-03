@@ -8,8 +8,20 @@ inputs:
   language:
     description: The language to analyze
     required: true
-  upload-to-code-scanning:
+  uploadToCodeScanning:
     description: Whether to upload the results to GitHub Code Scanning
+    required: false
+    default: "false"
+  queryTimeout:
+    description: The maximum time to run a query
+    required: false
+    default: "300"
+  createCodeQLDatabaseIfRequired:
+    description: Whether to create a CodeQL database if 'repositoryNameWithOwner:' does not have a CodeQL database stored
+    required: false
+    default: "true"
+  requestGitHubAnalysis:
+    description: Whether to request an analysis by GitHub if 'repositoryNameWithOwner:' does not have a CodeQL database stored
     required: false
     default: "false"
 runs:
@@ -26,8 +38,7 @@ runs:
         echo "GITHUB_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS=true" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS_CLASSPATH_FROM_BUILD_FILES=true" >> "$GITHUB_ENV"
-        echo "CODEQL_DB_PATH=${{ github.workspace }}" >> "$GITHUB_ENV"
-        echo "CODEQL_DB_ZIP=codeql-db.zip" >> "$GITHUB_ENV"
+        echo "CODEQL_DB_NAME=codeql-db" >> "$GITHUB_ENV"
         echo "CODEQL_RAM=$(awk '/MemTotal/ { printf "%.0f", $2/1024*0.8 }' /proc/meminfo)" >> "$GITHUB_ENV"
         echo "SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
     - name: Find or install CodeQL
@@ -41,7 +52,7 @@ runs:
           | tr -d '\n')"
         if [ -n "${VERSION}" ]
         then
-          echo "$VERSION/x64/codeql" >> $GITHUB_PATH
+          echo "${VERSION}/x64/codeql" >> $GITHUB_PATH
           echo "Using CodeQL at ${VERSION}"
         else
           gh extensions install github/gh-codeql
@@ -56,6 +67,7 @@ runs:
       run: |
         # Download CodeQL database
         echo "::group::Download CodeQL database"
+        CODEQL_DB_ZIP=codeql-db.zip
         ! curl -f -L -o ${CODEQL_DB_ZIP} \
           -H "Accept: application/zip" \
           -H "Authorization: Bearer ${{ github.token }}" \
@@ -63,8 +75,8 @@ runs:
           "https://api.github.com/repos/${{ inputs.repositoryNameWithOwner }}/code-scanning/codeql/databases/${{ inputs.language }}"
         if [ -f ${CODEQL_DB_ZIP} ]
         then
-          codeql database unbundle "${CODEQL_DB_ZIP}" --target="${CODEQL_DB_PATH}" --name=codeql-db
-          ! codeql database upgrade "${CODEQL_DB_PATH}/codeql-db"
+          codeql database unbundle "${CODEQL_DB_ZIP}" --target="${{ github.workspace }}" --name=${CODEQL_DB_NAME}
+          ! codeql database upgrade "${{ github.workspace }}/${CODEQL_DB_NAME}"
           echo "CODEQL_DB_DOWNLOADED=true" >> "$GITHUB_ENV"        
         fi
         echo "::endgroup::"
@@ -75,35 +87,39 @@ runs:
         repository: ${{ inputs.repositoryNameWithOwner }}
         path: ${{ inputs.repositoryNameWithOwner }}
     - name: Create CodeQL DB
-      if: env.CODEQL_DB_DOWNLOADED != 'true'
+      if: inputs.createCodeQLDatabaseIfRequired == 'true' && env.CODEQL_DB_DOWNLOADED != 'true'
       shell: bash
       run: |
         # Create CodeQL database
         echo "::group::Create CodeQL database"
-        if ! [ -d ${CODEQL_DB_PATH}/codeql-db ]
-        then
-          mkdir -p "${CODEQL_DB_PATH}/codeql-db"
-          cd ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }}
-          SEARCH_RESULTS=$(gh issue list --repo pre-quantum-research/pqc-data \
-            --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
-            --state open --json id,number,title)
-          RESULT_COUNT=$(jq length <<< "${SEARCH_RESULTS}")
-          if [[ ${RESULT_COUNT} -eq 0 ]]; then
-            gh issue create \
-              --repo pre-quantum-research/pqc-data \
-              --title ${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }} \
-              --label analysis-requested \
-              --body "$(git rev-parse HEAD)"
-          elif [[ ${RESULT_COUNT} -eq 1 ]]; then
-            ISSUE_NUMBER=$(jq -r ".[0].number" <<< "${SEARCH_RESULTS}")
-            gh issue comment \
-              --repo pre-quantum-research/pqc-data \
-              ${ISSUE_NUMBER} \
-              --body "$(git rev-parse HEAD)"
-          else
-            echo "Found multiple issues matching the search criteria"
-          fi
-          codeql database create --ram=${CODEQL_RAM} --language=${{ inputs.language }} "${CODEQL_DB_PATH}/codeql-db"
+        codeql database create --ram=${CODEQL_RAM} --language=${{ inputs.language }} "${{ github.workspace }}/${CODEQL_DB_NAME}"
+        echo "::endgroup::"
+    - name: Request GitHub CodeQL analysis
+      if: inputs.requestGitHubAnalysis == 'true' && env.CODEQL_DB_DOWNLOADED != 'true'
+      shell: bash
+      run: |
+        # Request GitHub CodeQL analysis
+        echo "::group::Request GitHub CodeQL analysis"
+        PQC_DATA_REPO="pre-quantum-research/pqc-data"
+        cd ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }}
+        SEARCH_RESULTS=$(gh issue list --repo ${PQC_DATA_REPO} \
+          --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
+          --state open --json id,number,title)
+        RESULT_COUNT=$(jq length <<< "${SEARCH_RESULTS}")
+        if [[ ${RESULT_COUNT} -eq 0 ]]; then
+          gh issue create \
+            --repo ${PQC_DATA_REPO} \
+            --title ${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }} \
+            --label analysis-requested \
+            --body "$(git rev-parse HEAD)"
+        elif [[ ${RESULT_COUNT} -eq 1 ]]; then
+          ISSUE_NUMBER=$(jq -r ".[0].number" <<< "${SEARCH_RESULTS}")
+          gh issue comment \
+            --repo ${PQC_DATA_REPO} \
+            ${ISSUE_NUMBER} \
+            --body "$(git rev-parse HEAD)"
+        else
+          echo "Found multiple issues matching the search criteria"
         fi
         echo "::endgroup::"
     - name: Analyze CodeQL DB
@@ -114,13 +130,13 @@ runs:
         echo "::group::Analyze CodeQL database"
         codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
         mkdir -p ${SARIF_DIR_PATH}
-        codeql database analyze ${CODEQL_DB_PATH}/codeql-db \
+        codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
           pre-quantum-research/${{ inputs.language }}-cryptography \
           --ram=$CODEQL_RAM \
           --output=${SARIF_DIR_PATH}/${{ inputs.language }}.sarif \
           --format=sarifv2.1.0 --sarif-category="PQC:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --sarif-add-query-help --sarif-add-snippets \
-          --timeout=60
+          --timeout=${{ inputs.queryTimeout }}
         echo "::endgroup::"
     - name: Archive results
       uses: actions/upload-artifact@v3
@@ -128,7 +144,7 @@ runs:
         name: pqc-results
         path: ${{ github.workspace }}/pqc-results
     - name: Upload results to Code Scanning
-      if: inputs.upload-to-code-scanning == 'true'
+      if: inputs.uploadToCodeScanning == 'true'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: ${{ env.SARIF_DIR_PATH }}/${{ inputs.language }}.sarif
