@@ -38,12 +38,10 @@ runs:
     - name: Generate repo access token
       id: app-token
       uses: actions/create-github-app-token@v1
-      continue-on-error: true
       with:
         app-id: ${{ inputs.actionsTokensAppId }}
         private-key: ${{ inputs.actionsTokensPrivateKey }}
         owner: pre-quantum-research
-        repositories: pqc-data
     - name: Set up env
       shell: bash
       env:
