@@ -64,7 +64,20 @@ runs:
         echo "GIT_SHA=$(gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/${DEFAULT_BRANCH} \
           --jq='.commit.sha')" >> "$GITHUB_ENV"
         echo "PQC_DATA_REPO=pre-quantum-research/pqc-data" >> "$GITHUB_ENV"
+    - name: Check for existing analysis results
+      id: check-for-results
+      shell: bash
+      run: |
+        # Check for existing analysis results
+        echo "::group::Check for existing analysis results"
+        curl -O -s -f -X GET -H "Authorization: token ${{ env.REPO_CONTENT_TOKEN }}" \
+          "https://raw.githubusercontent.com/${PQC_DATA_REPO}/main/data/${{ inputs.repositoryNameWithOwner }}/${GIT_SHA}/${{ inputs.language }}.sarif" || true
+        if [[ -f "${{ inputs.language }}.sarif" ]]; then
+          mv ${{ inputs.language }}.sarif ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif
+        fi
+        echo "::endgroup::"
     - name: Find or install CodeQL
+      if: steps.check-for-results.outcome != 'success' 
       shell: bash
       run: |
         # Find or install CodeQL
@@ -73,8 +86,7 @@ runs:
           | sort \
           | tail -n 1 \
           | tr -d '\n')"
-        if [ -n "${VERSION}" ]
-        then
+        if [[ -n "${VERSION}" ]]; then
           echo "${VERSION}/x64/codeql" >> $GITHUB_PATH
           echo "Using CodeQL at ${VERSION}"
         else
@@ -85,40 +97,71 @@ runs:
         echo "::endgroup::"
     - name: Download CodeQL DB
       id: download-codeql-db
+      if: steps.check-for-results.outcome != 'success' 
       shell: bash
       continue-on-error: true
       run: |
         # Download CodeQL database
         echo "::group::Download CodeQL database"
         CODEQL_DB_ZIP=codeql-db.zip
-        ! curl -f -L -o ${CODEQL_DB_ZIP} \
+        ! curl -f -s -L -o ${CODEQL_DB_ZIP} \
           -H "Accept: application/zip" \
           -H "Authorization: Bearer ${{ github.token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           "https://api.github.com/repos/${{ inputs.repositoryNameWithOwner }}/code-scanning/codeql/databases/${{ inputs.language }}"
-        if [ -f ${CODEQL_DB_ZIP} ]
-        then
+        if [[ -f ${CODEQL_DB_ZIP} ]]; then
           codeql database unbundle "${CODEQL_DB_ZIP}" --target="${{ github.workspace }}" --name=${CODEQL_DB_NAME}
-          ! codeql database upgrade "${{ github.workspace }}/${CODEQL_DB_NAME}"
+          codeql database upgrade "${{ github.workspace }}/${CODEQL_DB_NAME}" || true
           echo "CODEQL_DB_DOWNLOADED=true" >> "$GITHUB_ENV"        
         fi
         echo "::endgroup::"
     - name: Checkout analysis repository
-      if: inputs.createCodeQLDatabaseIfRequired == 'true' && env.CODEQL_DB_DOWNLOADED != 'true'
+      if: |
+        steps.check-for-results.outcome != 'success' && 
+        env.CODEQL_DB_DOWNLOADED != 'true' &&
+        inputs.createCodeQLDatabaseIfRequired == 'true'
       uses: actions/checkout@v4
       with:
         repository: ${{ inputs.repositoryNameWithOwner }}
         path: ${{ inputs.repositoryNameWithOwner }}
     - name: Create CodeQL DB
-      if: inputs.createCodeQLDatabaseIfRequired == 'true' && env.CODEQL_DB_DOWNLOADED != 'true'
+      id: create-codeql-db
+      continue-on-error: true
+      if: |
+        steps.check-for-results.outcome != 'success' && 
+        env.CODEQL_DB_DOWNLOADED != 'true' &&
+        inputs.createCodeQLDatabaseIfRequired == 'true'
       shell: bash
       run: |
         # Create CodeQL database
         echo "::group::Create CodeQL database"
         codeql database create --ram=${CODEQL_RAM} --language=${{ inputs.language }} "${{ github.workspace }}/${CODEQL_DB_NAME}"
         echo "::endgroup::"
+    - name: Analyze CodeQL DB
+      id: analyze-codeql-db
+      if: |
+        steps.check-for-results.outcome != 'success' && 
+        (steps.create-codeql-db.outcome == 'success' || env.CODEQL_DB_DOWNLOADED == 'true')
+      shell: bash
+      continue-on-error: true
+      run: |
+        # Analyze CodeQL database
+        echo "::group::Analyze CodeQL database"
+        codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
+        mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
+        codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
+          pre-quantum-research/${{ inputs.language }}-cryptography \
+          --ram=${CODEQL_RAM} \
+          --output=${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif \
+          --format=sarifv2.1.0 --sarif-category="PQC:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
+          --sarif-add-query-help --sarif-add-snippets \
+          --timeout=${{ inputs.queryTimeout }}
+        echo "::endgroup::"
     - name: Request GitHub CodeQL analysis
-      if: inputs.requestGitHubAnalysis == 'true' && env.CODEQL_DB_DOWNLOADED != 'true'
+      if: |
+        inputs.requestGitHubAnalysis == 'true' &&
+        steps.check-for-results.outcome != 'success' && 
+        (env.CODEQL_DB_DOWNLOADED != 'true' && steps.analyze-codeql-db.outcome != 'success')  
       shell: bash
       run: |
         # Request GitHub CodeQL analysis
@@ -144,43 +187,16 @@ runs:
           fi
         fi
         echo "::endgroup::"
-    - name: Check for existing analysis results
-      id: check-for-results
-      shell: bash
-      continue-on-error: true
-      run: |
-        # Check for existing analysis results
-        echo "::group::Check for existing analysis results"
-        curl -O -s -f -X GET -H "Authorization: token ${{ env.REPO_CONTENT_TOKEN }}" \
-          "https://raw.githubusercontent.com/${PQC_DATA_REPO}/main/data/${{ inputs.repositoryNameWithOwner }}/${GIT_SHA}/${{ inputs.language }}.sarif"
-        IF [[ $? -eq 0 ]]; then
-          mv ${{ inputs.language }}.sarif ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif
-        fi
-        echo "::endgroup::"
-    - name: Analyze CodeQL DB
-      if: steps.check-for-results.outcome != 'success' && (inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true')
-      shell: bash
-      continue-on-error: true
-      run: |
-        # Analyze CodeQL database
-        echo "::group::Analyze CodeQL database"
-        codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
-        mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
-        codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
-          pre-quantum-research/${{ inputs.language }}-cryptography \
-          --ram=${CODEQL_RAM} \
-          --output=${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif \
-          --format=sarifv2.1.0 --sarif-category="PQC:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
-          --sarif-add-query-help --sarif-add-snippets \
-          --timeout=${{ inputs.queryTimeout }}
-        echo "::endgroup::"
     - name: Archive results
+      if: (steps.check-for-results.outcome == 'success' || steps.analyze-codeql-db.outcome == 'success')
       uses: actions/upload-artifact@v3
       with:
         name: pqc-results
         path: ${{ github.workspace }}/pqc-results
     - name: Upload results to Code Scanning
-      if: inputs.uploadToCodeScanning == 'true'
+      if: |
+        inputs.uploadToCodeScanning == 'true' &&
+        (steps.check-for-results.outcome == 'success' || steps.analyze-codeql-db.outcome == 'success')
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: ${{ env.SARIF_DIR_PATH }}/${{ env.GIT_SHA }}/${{ inputs.language }}.sarif
