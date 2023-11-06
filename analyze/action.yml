@@ -44,6 +44,8 @@ runs:
         private-key: ${{ inputs.actionsTokensPrivateKey }}
     - name: Set up env
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         # Set up environment variables
         IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repositoryNameWithOwner }}
@@ -59,7 +61,7 @@ runs:
         echo "SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
         DEFAULT_BRANCH=$(gh api repos/${{ inputs.repositoryNameWithOwner }} --jq ".default_branch")
         echo "DEFAULT_BRANCH=${DEFAULT_BRANCH}" >> "$GITHUB_ENV"
-        echo "GIT_SHA=$(GH_TOKEN=${{ github.token }} gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/${DEFAULT_BRANCH} \
+        echo "GIT_SHA=$(gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/${DEFAULT_BRANCH} \
           --jq='.commit.sha')" >> "$GITHUB_ENV"
         echo "PQC_DATA_REPO=pre-quantum-research/pqc-data" >> "$GITHUB_ENV"
     - name: Find or install CodeQL
