@@ -112,14 +112,15 @@ runs:
             --title ${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }} \
             --label analysis-requested \
             --body "$(git rev-parse HEAD)"
-        elif [[ ${RESULT_COUNT} -eq 1 ]]; then
+        else
           ISSUE_NUMBER=$(jq -r ".[0].number" <<< "${SEARCH_RESULTS}")
           gh issue comment \
             --repo ${PQC_DATA_REPO} \
             ${ISSUE_NUMBER} \
             --body "$(git rev-parse HEAD)"
-        else
-          echo "Found multiple issues matching the search criteria"
+          if [[ ${RESULT_COUNT} -gt 1 ]]; then
+            echo "Found multiple issues matching the search criteria, comment added to issue #${ISSUE_NUMBER}"
+          fi
         fi
         echo "::endgroup::"
     - name: Analyze CodeQL DB
@@ -129,12 +130,14 @@ runs:
       run: |
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
-        codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography 
-        mkdir -p ${SARIF_DIR_PATH}
+        codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
+        $SARIF_DIR_WITH_SHA="${SARIF_DIR_PATH}/$(git rev-parse HEAD)"
+        echo "SARIF_DIR_WITH_SHA=${SARIF_DIR_WITH_SHA}" >> "$GITHUB_ENV"
+        mkdir -p ${SARIF_DIR_WITH_SHA}
         codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
           pre-quantum-research/${{ inputs.language }}-cryptography \
-          --ram=$CODEQL_RAM \
-          --output=${SARIF_DIR_PATH}/${{ inputs.language }}.sarif \
+          --ram=${CODEQL_RAM} \
+          --output=${SARIF_DIR_WITH_SHA}/${{ inputs.language }}.sarif \
           --format=sarifv2.1.0 --sarif-category="PQC:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --sarif-add-query-help --sarif-add-snippets \
           --timeout=${{ inputs.queryTimeout }}
@@ -149,5 +152,5 @@ runs:
       if: (inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true') && inputs.uploadToCodeScanning == 'true'
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: ${{ env.SARIF_DIR_PATH }}/${{ inputs.language }}.sarif
+        sarif_file: ${{ env.SARIF_DIR_WITH_SHA }}/${{ inputs.language }}.sarif
 
