@@ -135,7 +135,7 @@ runs:
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
         codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
-        $SARIF_DIR_WITH_SHA="${SARIF_DIR_PATH}/${GIT_SHA}"
+        SARIF_DIR_WITH_SHA="${SARIF_DIR_PATH}/${GIT_SHA}"
         echo "SARIF_DIR_WITH_SHA=${SARIF_DIR_WITH_SHA}" >> "$GITHUB_ENV"
         mkdir -p ${SARIF_DIR_WITH_SHA}
         codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
