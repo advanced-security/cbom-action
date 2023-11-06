@@ -81,7 +81,7 @@ runs:
         fi
         echo "::endgroup::"
     - name: Checkout analysis repository
-      if: env.CODEQL_DB_DOWNLOADED != 'true'
+      if: inputs.createCodeQLDatabaseIfRequired == 'true' && env.CODEQL_DB_DOWNLOADED != 'true'
       uses: actions/checkout@v4
       with:
         repository: ${{ inputs.repositoryNameWithOwner }}
@@ -101,7 +101,8 @@ runs:
         # Request GitHub CodeQL analysis
         echo "::group::Request GitHub CodeQL analysis"
         PQC_DATA_REPO="pre-quantum-research/pqc-data"
-        GIT_SHA="$(git -C ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }} rev-parse HEAD)"
+        GIT_SHA="gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/
+          $(gh api repos/${{ inputs.repositoryNameWithOwner }} --jq '.default_branch') --jq='.commit.sha'"
         SEARCH_RESULTS=$(gh issue list --repo ${PQC_DATA_REPO} \
           --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --state open --json id,number,title)
@@ -131,7 +132,8 @@ runs:
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
         codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
-        GIT_SHA="$(git -C ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }} rev-parse HEAD)"
+        GIT_SHA="gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/
+          $(gh api repos/${{ inputs.repositoryNameWithOwner }} --jq '.default_branch') --jq='.commit.sha'"
         $SARIF_DIR_WITH_SHA="${SARIF_DIR_PATH}/${GIT_SHA}"
         echo "SARIF_DIR_WITH_SHA=${SARIF_DIR_WITH_SHA}" >> "$GITHUB_ENV"
         mkdir -p ${SARIF_DIR_WITH_SHA}
