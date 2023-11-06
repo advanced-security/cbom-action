@@ -73,6 +73,7 @@ runs:
         curl -O -s -f -X GET -H "Authorization: token ${{ env.REPO_CONTENT_TOKEN }}" \
           "https://raw.githubusercontent.com/${PQC_DATA_REPO}/main/data/${{ inputs.repositoryNameWithOwner }}/${GIT_SHA}/${{ inputs.language }}.sarif" || true
         if [[ -f "${{ inputs.language }}.sarif" ]]; then
+          mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
           mv ${{ inputs.language }}.sarif ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif
         fi
         echo "::endgroup::"
