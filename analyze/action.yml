@@ -41,7 +41,7 @@ runs:
         echo "CODEQL_DB_NAME=codeql-db" >> "$GITHUB_ENV"
         echo "CODEQL_RAM=$(awk '/MemTotal/ { printf "%.0f", $2/1024*0.8 }' /proc/meminfo)" >> "$GITHUB_ENV"
         echo "SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
-        echo "GIT_SHA=$(
+        echo "GIT_SHA=$(export GH_TOKEN=${{ github.token }}; \
           gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/$(
             gh api repos/${{ inputs.repositoryNameWithOwner }} --jq ".default_branch"
           ) --jq=".commit.sha"
