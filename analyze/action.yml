@@ -41,6 +41,11 @@ runs:
         echo "CODEQL_DB_NAME=codeql-db" >> "$GITHUB_ENV"
         echo "CODEQL_RAM=$(awk '/MemTotal/ { printf "%.0f", $2/1024*0.8 }' /proc/meminfo)" >> "$GITHUB_ENV"
         echo "SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
+        echo "GIT_SHA=$(
+          gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/$(
+            gh api repos/${{ inputs.repositoryNameWithOwner }} --jq ".default_branch"
+          ) --jq=".commit.sha"
+        )" >> "$GITHUB_ENV"
     - name: Find or install CodeQL
       shell: bash
       run: |
@@ -101,8 +106,6 @@ runs:
         # Request GitHub CodeQL analysis
         echo "::group::Request GitHub CodeQL analysis"
         PQC_DATA_REPO="pre-quantum-research/pqc-data"
-        GIT_SHA="gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/
-          $(gh api repos/${{ inputs.repositoryNameWithOwner }} --jq '.default_branch') --jq='.commit.sha'"
         SEARCH_RESULTS=$(gh issue list --repo ${PQC_DATA_REPO} \
           --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --state open --json id,number,title)
@@ -132,8 +135,6 @@ runs:
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
         codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
-        GIT_SHA="gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/
-          $(gh api repos/${{ inputs.repositoryNameWithOwner }} --jq '.default_branch') --jq='.commit.sha'"
         $SARIF_DIR_WITH_SHA="${SARIF_DIR_PATH}/${GIT_SHA}"
         echo "SARIF_DIR_WITH_SHA=${SARIF_DIR_WITH_SHA}" >> "$GITHUB_ENV"
         mkdir -p ${SARIF_DIR_WITH_SHA}
@@ -146,13 +147,12 @@ runs:
           --timeout=${{ inputs.queryTimeout }}
         echo "::endgroup::"
     - name: Archive results
-      if: inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true'
       uses: actions/upload-artifact@v3
       with:
         name: pqc-results
         path: ${{ github.workspace }}/pqc-results
     - name: Upload results to Code Scanning
-      if: (inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true') && inputs.uploadToCodeScanning == 'true'
+      if: inputs.uploadToCodeScanning == 'true'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: ${{ env.SARIF_DIR_WITH_SHA }}/${{ inputs.language }}.sarif
