@@ -76,6 +76,8 @@ runs:
           mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
           mv ${{ inputs.language }}.sarif ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif
           echo "SARIF results file downloaded to ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif"
+        else
+          echo "No SARIF results file found"
         fi
         echo "::endgroup::"
     - name: Find or install CodeQL
