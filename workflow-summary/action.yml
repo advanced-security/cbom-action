@@ -16,10 +16,10 @@ runs:
         echo "::group::Post summary info to workflow run"
         cd ${{ github.workspace }}/pqc-results
         ls -lah
-        echo "| Owner    | Repo    | Language    | Result Count    |" >> $GITHUB_STEP_SUMMARY
-        echo "|----------|---------|-------------|-----------------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Owner    | Repo    | Commit    | Language    | Result Count    |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|---------|-----------|-------------|-----------------|" >> $GITHUB_STEP_SUMMARY
         shopt -s globstar
         jq -cn 'foreach inputs as $i (0; . +1; "\(input_filename|rtrimstr(".sarif"))/\($i.runs[].results|length)")' **/*.sarif \
-        | xargs -I "{}" bash -c 'IFS=/ read -r OWNER REPO LANGUAGE RESULT_COUNT <<< {};
-            echo "| ${OWNER} | ${REPO} | ${LANGUAGE} | ${RESULT_COUNT} |" >> $GITHUB_STEP_SUMMARY'
+        | xargs -I "{}" bash -c 'IFS=/ read -r OWNER REPO COMMIT LANGUAGE RESULT_COUNT <<< {};
+            echo "| ${OWNER} | ${REPO} | ${COMMIT} | ${LANGUAGE} | ${RESULT_COUNT} |" >> $GITHUB_STEP_SUMMARY'
         echo "::endgroup::"
