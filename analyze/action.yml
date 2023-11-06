@@ -24,15 +24,24 @@ inputs:
     description: Whether to request an analysis by GitHub if 'repositoryNameWithOwner:' does not have a CodeQL database stored
     required: false
     default: "false"
+  actionsTokensAppId:
+    description: The GitHub App ID for the actions-tokens GitHub App
+    required: false
+    default: ""
+  actionsTokensPrivateKey:
+    description: The GitHub App private key for the actions-tokens GitHub App
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
     - name: Generate repo access token
       id: app-token
       uses: actions/create-github-app-token@v1
+      continue-on-error: true
       with:
-        app-id: ${{ secrets.ACTIONS_TOKENS_APP_ID }}
-        private-key: ${{ secrets.ACTIONS_TOKENS_PRIVATE_KEY }}
+        app-id: ${{ inputs.actionsTokensAppId }}
+        private-key: ${{ inputs.actionsTokensPrivateKey }}
     - name: Set up env
       shell: bash
       run: |
