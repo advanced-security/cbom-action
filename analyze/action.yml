@@ -42,7 +42,8 @@ runs:
       with:
         app-id: ${{ inputs.actionsTokensAppId }}
         private-key: ${{ inputs.actionsTokensPrivateKey }}
-        owner: ${{ github.repository_owner }}
+        owner: pre-quantum-research
+        repositories: pqc-data
     - name: Set up env
       shell: bash
       env:
