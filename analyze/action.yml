@@ -101,7 +101,7 @@ runs:
         # Request GitHub CodeQL analysis
         echo "::group::Request GitHub CodeQL analysis"
         PQC_DATA_REPO="pre-quantum-research/pqc-data"
-        cd ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }}
+        GIT_SHA="$(git -C ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }} rev-parse HEAD)"
         SEARCH_RESULTS=$(gh issue list --repo ${PQC_DATA_REPO} \
           --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --state open --json id,number,title)
@@ -111,13 +111,13 @@ runs:
             --repo ${PQC_DATA_REPO} \
             --title ${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }} \
             --label analysis-requested \
-            --body "$(git rev-parse HEAD)"
+            --body "${GIT_SHA}"
         else
           ISSUE_NUMBER=$(jq -r ".[0].number" <<< "${SEARCH_RESULTS}")
           gh issue comment \
             --repo ${PQC_DATA_REPO} \
             ${ISSUE_NUMBER} \
-            --body "$(git rev-parse HEAD)"
+            --body "${GIT_SHA}"
           if [[ ${RESULT_COUNT} -gt 1 ]]; then
             echo "Found multiple issues matching the search criteria, comment added to issue #${ISSUE_NUMBER}"
           fi
@@ -131,7 +131,8 @@ runs:
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
         codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
-        $SARIF_DIR_WITH_SHA="${SARIF_DIR_PATH}/$(git rev-parse HEAD)"
+        GIT_SHA="$(git -C ${{ github.workspace }}/${{ inputs.repositoryNameWithOwner }} rev-parse HEAD)"
+        $SARIF_DIR_WITH_SHA="${SARIF_DIR_PATH}/${GIT_SHA}"
         echo "SARIF_DIR_WITH_SHA=${SARIF_DIR_WITH_SHA}" >> "$GITHUB_ENV"
         mkdir -p ${SARIF_DIR_WITH_SHA}
         codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
