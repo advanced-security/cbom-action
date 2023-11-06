@@ -27,6 +27,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Generate repo access token
+      id: app-token
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ secrets.ACTIONS_TOKENS_APP_ID }}
+        private-key: ${{ secrets.ACTIONS_TOKENS_PRIVATE_KEY }}
     - name: Set up env
       shell: bash
       run: |
@@ -34,6 +40,7 @@ runs:
         IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repositoryNameWithOwner }}
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
         echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
+        echo "REPO_CONTENT_TOKEN=${{ steps.app-token.outputs.token }}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "GITHUB_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS=true" >> "$GITHUB_ENV"
@@ -41,11 +48,11 @@ runs:
         echo "CODEQL_DB_NAME=codeql-db" >> "$GITHUB_ENV"
         echo "CODEQL_RAM=$(awk '/MemTotal/ { printf "%.0f", $2/1024*0.8 }' /proc/meminfo)" >> "$GITHUB_ENV"
         echo "SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
-        echo "GIT_SHA=$(export GH_TOKEN=${{ github.token }}; \
-          gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/$(
-            gh api repos/${{ inputs.repositoryNameWithOwner }} --jq ".default_branch"
-          ) --jq=".commit.sha"
-        )" >> "$GITHUB_ENV"
+        DEFAULT_BRANCH=$(gh api repos/${{ inputs.repositoryNameWithOwner }} --jq ".default_branch")
+        echo "DEFAULT_BRANCH=${DEFAULT_BRANCH}" >> "$GITHUB_ENV"
+        echo "GIT_SHA=$(GH_TOKEN=${{ github.token }} gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/${DEFAULT_BRANCH} \
+          --jq='.commit.sha')" >> "$GITHUB_ENV"
+        echo "PQC_DATA_REPO=pre-quantum-research/pqc-data" >> "$GITHUB_ENV"
     - name: Find or install CodeQL
       shell: bash
       run: |
@@ -105,7 +112,6 @@ runs:
       run: |
         # Request GitHub CodeQL analysis
         echo "::group::Request GitHub CodeQL analysis"
-        PQC_DATA_REPO="pre-quantum-research/pqc-data"
         SEARCH_RESULTS=$(gh issue list --repo ${PQC_DATA_REPO} \
           --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --state open --json id,number,title)
@@ -127,21 +133,32 @@ runs:
           fi
         fi
         echo "::endgroup::"
+    - name: Check for existing analysis results
+      id: check-for-results
+      shell: bash
+      continue-on-error: true
+      run: |
+        # Check for existing analysis results
+        echo "::group::Check for existing analysis results"
+        curl -O -s -f -X GET -H "Authorization: token ${{ env.REPO_CONTENT_TOKEN }}" \
+          "https://raw.githubusercontent.com/${PQC_DATA_REPO}/main/data/${{ inputs.repositoryNameWithOwner }}/${GIT_SHA}/${{ inputs.language }}.sarif"
+        IF [[ $? -eq 0 ]]; then
+          mv ${{ inputs.language }}.sarif ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif
+        fi
+        echo "::endgroup::"
     - name: Analyze CodeQL DB
-      if: inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true'
+      if: steps.check-for-results.outcome != 'success' && (inputs.createCodeQLDatabaseIfRequired == 'true' || env.CODEQL_DB_DOWNLOADED == 'true')
       shell: bash
       continue-on-error: true
       run: |
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
         codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
-        SARIF_DIR_WITH_SHA="${SARIF_DIR_PATH}/${GIT_SHA}"
-        echo "SARIF_DIR_WITH_SHA=${SARIF_DIR_WITH_SHA}" >> "$GITHUB_ENV"
-        mkdir -p ${SARIF_DIR_WITH_SHA}
+        mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
         codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
           pre-quantum-research/${{ inputs.language }}-cryptography \
           --ram=${CODEQL_RAM} \
-          --output=${SARIF_DIR_WITH_SHA}/${{ inputs.language }}.sarif \
+          --output=${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif \
           --format=sarifv2.1.0 --sarif-category="PQC:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --sarif-add-query-help --sarif-add-snippets \
           --timeout=${{ inputs.queryTimeout }}
@@ -155,5 +172,5 @@ runs:
       if: inputs.uploadToCodeScanning == 'true'
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: ${{ env.SARIF_DIR_WITH_SHA }}/${{ inputs.language }}.sarif
+        sarif_file: ${{ env.SARIF_DIR_PATH }}/${{ env.GIT_SHA }}/${{ inputs.language }}.sarif
 
