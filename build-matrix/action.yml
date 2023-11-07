@@ -30,7 +30,7 @@ runs:
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
     - name: Get dependency graph and code languages
       id: run
-      shell: bash -ex {0}
+      shell: bash
       run: |
         # Get the dependency graph and code languages
         echo "::group::Get the dependency graph and code languages"
