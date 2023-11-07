@@ -107,31 +107,31 @@ runs:
           }'
         fi
         JSON=$(gh api graphql -H "Accept: application/vnd.github.hawkgirl-preview+json" -f query="${QUERY}")
-        REPOSITORIES=$(jq -c "
+        REPOSITORIES=$(jq -c '
           (
             [
               .data.repository.nameWithOwner as $nameWithOwner | 
               .data.repository.languages.edges[] | 
               select(.size >= ${{ inputs.minimumLanguageBytes }}).node.name |
-              select(. | IN('Java','C','C++','Python','Go','C#')) as $language | 
-              {nameWithOwner: $nameWithOwner, language: (if $language == 'C' then 'C++' else $language end), isDependency: false} | tostring
+              select(. | IN("Java","C","C++","Python","Go","C#")) as $language | 
+              {nameWithOwner: $nameWithOwner, language: (if $language == "C" then "C++" else $language end), isDependency: false} | tostring
             ] | unique
           ) as $targetrepo | 
           (
             [
               .data.repository.dependencyGraphManifests.edges[]?.node | 
-              select(.filename | contains('.github/workflows') | not) | 
+              select(.filename | contains(".github/workflows") | not) | 
               .dependencies.edges[].node.repository as $repository |
               select($repository != null) | 
               $repository.nameWithOwner as $nameWithOwner | 
               $repository.languages.edges[] | 
               select(.size >= ${{ inputs.minimumLanguageBytes }}).node.name |
-              select(. | IN('Java','C','C++','Python','Go','C#')) as $language | 
-              {nameWithOwner: $nameWithOwner, language: (if $language == 'C' then 'C++' else $language end), isDependency: true} | tostring
+              select(. | IN("Java","C","C++","Python","Go","C#")) as $language | 
+              {nameWithOwner: $nameWithOwner, language: (if $language == "C" then "C++" else $language end), isDependency: true} | tostring
             ] | unique
           ) as $dependencyrepos | 
-          if ('${{ inputs.analyzeDependencies }}' == 'true') then (($targetrepo + $dependencyrepos) | unique) else $targetrepo end
-        " <<< ${JSON} \
+          if ("${{ inputs.analyzeDependencies }}" == "true") then (($targetrepo + $dependencyrepos) | unique) else $targetrepo end
+        ' <<< ${JSON} \
         | sed 's/\\\"C\\\"/\\\"cpp\\\"/g; s/\\\"C++\\\"/\\\"cpp\\\"/g; s/\\\"C#\\\"/\\\"csharp\\\"/g' \
         | tr "[:upper:]" "[:lower:]")
         if [[ jq length <<< ${REPOSITORIES} -eq 0 ]]; then
