@@ -35,8 +35,8 @@ runs:
         # Get the dependency graph and code languages
         echo "::group::Get the dependency graph and code languages"
         if [[ "${{ inputs.analyzeDependencies }}" == "true" ]]; then
-          QUERY="query getDependencyGraphAndLanguages {
-            repository(owner: '${REPO_OWNER}', name: '${REPO_NAME}') {
+          QUERY='query getDependencyGraphAndLanguages {
+            repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
               nameWithOwner
               dependencyGraphManifests {
                 totalCount
@@ -85,10 +85,10 @@ runs:
                 }
               }
             }
-          }"
+          }'
         else
-          QUERY="query getLanguages {
-            repository(owner: '${REPO_OWNER}', name: '${REPO_NAME}') {
+          QUERY='query getLanguages {
+            repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
               nameWithOwner
               languages(first: 50) {
                 totalCount
@@ -104,7 +104,7 @@ runs:
                 }
               }
             }
-          }"
+          }'
         fi
         JSON=$(gh api graphql -H "Accept: application/vnd.github.hawkgirl-preview+json" -f query="${QUERY}")
         REPOSITORIES=$(jq -c "
