@@ -34,8 +34,8 @@ runs:
       run: |
         # Get the dependency graph and code languages
         echo "::group::Get the dependency graph and code languages"
-        JSON=$(gh api graphql -H 'Accept: application/vnd.github.hawkgirl-preview+json' -f query='
-          query getDependencyGraphAndLanguages {
+        if [[ "${{ inputs.analyzeDependencies }}" == "true" ]]; then
+          QUERY='query getDependencyGraphAndLanguages {
             repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
               nameWithOwner
               dependencyGraphManifests {
@@ -85,8 +85,28 @@ runs:
                 }
               }
             }
-          }
-        ')
+          }'
+        else
+          QUERY='query getLanguages {
+            repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
+              nameWithOwner
+              languages(first: 50) {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
+                edges {
+                  size
+                  node {
+                    name
+                  }
+                }
+              }
+            }
+          }'
+        fi
+        JSON=$(gh api graphql -H 'Accept: application/vnd.github.hawkgirl-preview+json' -f query=${QUERY})
         REPOSITORIES=$(jq -c '
           (
             [
@@ -99,7 +119,7 @@ runs:
           ) as $targetrepo | 
           (
             [
-              .data.repository.dependencyGraphManifests.edges[].node | 
+              .data.repository.dependencyGraphManifests.edges[]?.node | 
               select(.filename | contains(".github/workflows") | not) | 
               .dependencies.edges[].node.repository as $repository |
               select($repository != null) | 
