@@ -36,7 +36,7 @@ runs:
         echo "::group::Get the dependency graph and code languages"
         if [[ "${{ inputs.analyzeDependencies }}" == "true" ]]; then
           QUERY='query getDependencyGraphAndLanguages {
-            repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
+            repository(owner: "${REPO_OWNER}", name: "${REPO_NAME}") {
               nameWithOwner
               dependencyGraphManifests {
                 totalCount
@@ -88,7 +88,7 @@ runs:
           }'
         else
           QUERY='query getLanguages {
-            repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
+            repository(owner: "${REPO_OWNER}", name: "${REPO_NAME}") {
               nameWithOwner
               languages(first: 50) {
                 totalCount
@@ -131,8 +131,13 @@ runs:
             ] | unique
           ) as $dependencyrepos | 
           if ("${{ inputs.analyzeDependencies }}" == "true") then (($targetrepo + $dependencyrepos) | unique) else $targetrepo end
-        ' <<< $JSON \
+        ' <<< ${JSON} \
         | sed 's/\\\"C\\\"/\\\"cpp\\\"/g; s/\\\"C++\\\"/\\\"cpp\\\"/g; s/\\\"C#\\\"/\\\"csharp\\\"/g' \
         | tr "[:upper:]" "[:lower:]")
-        echo "repositories=$REPOSITORIES" >> "$GITHUB_OUTPUT"
+        if [[ jq length <<< ${REPOSITORIES} -eq 0 ]]; then
+          echo "No repositories found"
+          exit 1
+        else
+          echo "repositories=${REPOSITORIES}" >> "$GITHUB_OUTPUT"
+        fi
         echo "::endgroup::"
