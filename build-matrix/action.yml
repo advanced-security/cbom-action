@@ -134,7 +134,7 @@ runs:
         ' <<< ${JSON} \
         | sed 's/\\\"C\\\"/\\\"cpp\\\"/g; s/\\\"C++\\\"/\\\"cpp\\\"/g; s/\\\"C#\\\"/\\\"csharp\\\"/g' \
         | tr "[:upper:]" "[:lower:]")
-        if [[ jq length <<< ${REPOSITORIES} -eq 0 ]]; then
+        if [[ $(jq length <<< "${REPOSITORIES}") -eq 0 ]]; then
           echo "No repositories found"
           exit 1
         else
