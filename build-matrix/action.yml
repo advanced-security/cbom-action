@@ -36,7 +36,7 @@ runs:
         echo "::group::Get the dependency graph and code languages"
         if [[ "${{ inputs.analyzeDependencies }}" == "true" ]]; then
           QUERY="query getDependencyGraphAndLanguages {
-            repository(owner: ${REPO_OWNER}, name: ${REPO_NAME}) {
+            repository(owner: '${REPO_OWNER}', name: '${REPO_NAME}') {
               nameWithOwner
               dependencyGraphManifests {
                 totalCount
@@ -88,7 +88,7 @@ runs:
           }"
         else
           QUERY="query getLanguages {
-            repository(owner: ${REPO_OWNER}, name: ${REPO_NAME}) {
+            repository(owner: '${REPO_OWNER}', name: '${REPO_NAME'}) {
               nameWithOwner
               languages(first: 50) {
                 totalCount
