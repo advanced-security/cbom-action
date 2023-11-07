@@ -38,6 +38,7 @@ runs:
           QUERY='query getDependencyGraphAndLanguages {
             repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
               nameWithOwner
+              visibility
               dependencyGraphManifests {
                 totalCount
                 edges {
@@ -51,6 +52,7 @@ runs:
                           requirements
                           repository {
                             nameWithOwner
+                            visibility
                             languages(first: 50) {
                               totalCount
                               pageInfo {
@@ -90,6 +92,7 @@ runs:
           QUERY='query getLanguages {
             repository(owner: "${{ env.REPO_OWNER }}", name: "${{ env.REPO_NAME }}") {
               nameWithOwner
+              visibility
               languages(first: 50) {
                 totalCount
                 pageInfo {
@@ -110,12 +113,16 @@ runs:
         REPOSITORIES=$(jq -c '
           (
             [
-              .data.repository.nameWithOwner as $nameWithOwner | 
+              .data.repository as $repository | 
               .data.repository.languages.edges[] | 
               select(.size >= ${{ inputs.minimumLanguageBytes }}).node.name |
               select(. | IN("Java","C","C++","Python","Go","C#")) as $language | 
-              {nameWithOwner: $nameWithOwner, language: (if $language == "C" then "C++" else $language end), isDependency: false} | tostring
-            ] | unique
+              {
+                nameWithOwner: $repository.nameWithOwner,
+                language: (if $language == "C" then "C++" else $language end),
+                visibility: $repository.visibility
+              } | tostring
+            ]
           ) as $targetrepo | 
           (
             [
@@ -123,14 +130,17 @@ runs:
               select(.filename | contains(".github/workflows") | not) | 
               .dependencies.edges[].node.repository as $repository |
               select($repository != null) | 
-              $repository.nameWithOwner as $nameWithOwner | 
               $repository.languages.edges[] | 
               select(.size >= ${{ inputs.minimumLanguageBytes }}).node.name |
               select(. | IN("Java","C","C++","Python","Go","C#")) as $language | 
-              {nameWithOwner: $nameWithOwner, language: (if $language == "C" then "C++" else $language end), isDependency: true} | tostring
-            ] | unique
+              {
+                nameWithOwner: $repository.nameWithOwner,
+                language: (if $language == "C" then "C++" else $language end),
+                visibility: $repository.visibility
+              } | tostring
+            ]
           ) as $dependencyrepos | 
-          if ("${{ inputs.analyzeDependencies }}" == "true") then (($targetrepo + $dependencyrepos) | unique) else $targetrepo end
+          $targetrepo + $dependencyrepos | unique
         ' <<< ${JSON} \
         | sed 's/\\\"C\\\"/\\\"cpp\\\"/g; s/\\\"C++\\\"/\\\"cpp\\\"/g; s/\\\"C#\\\"/\\\"csharp\\\"/g' \
         | tr "[:upper:]" "[:lower:]")
