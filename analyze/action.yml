@@ -162,7 +162,7 @@ runs:
         codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
         mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
         codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
-          pre-quantum-research/${{ inputs.language }}-cryptography \
+          codeql/${{ inputs.language }}-queries:experimental/cryptography/inventory/new_models \
           --ram=${CODEQL_RAM} \
           --output=${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif \
           --format=sarifv2.1.0 --sarif-category="PQC:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
