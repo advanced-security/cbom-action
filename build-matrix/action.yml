@@ -148,6 +148,7 @@ runs:
           echo "No suitable repositories found, maybe no supported languages detected?"
           exit 1
         else
+          echo "Result: ${REPOSITORIES}"
           echo "repositories=${REPOSITORIES}" >> "$GITHUB_OUTPUT"
         fi
         echo "::endgroup::"
