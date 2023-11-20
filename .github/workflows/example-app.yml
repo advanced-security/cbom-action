@@ -30,7 +30,6 @@ jobs:
         with:
           repositoryNameWithOwner: ${{ fromJson(matrix.repository).nameWithOwner }}
           language: ${{ fromJson(matrix.repository).language }}
-          dataRepoToken: ${{ secrets.CONTENT_TOKEN }}
   add-workflow-summary:
     name: CBOM results
     runs-on: ubuntu-latest
