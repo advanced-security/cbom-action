@@ -1,5 +1,5 @@
-name: PQC Analyze Action
-description: Run the Post Quantum Research CodeQL queries and create a CBOM
+name: CBOM Analyze Action
+description: Run CodeQL queries and create a Crypto Bill of Materials
 inputs:
   repositoryNameWithOwner:
     description: The repository to analyze
@@ -38,27 +38,26 @@ runs:
         IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repositoryNameWithOwner }}
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
         echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
-        echo "REPO_CONTENT_TOKEN=${{ secrets.content-token }}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "GITHUB_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS=true" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS_CLASSPATH_FROM_BUILD_FILES=true" >> "$GITHUB_ENV"
         echo "CODEQL_DB_NAME=codeql-db" >> "$GITHUB_ENV"
         echo "CODEQL_RAM=$(awk '/MemTotal/ { printf "%.0f", $2/1024*0.8 }' /proc/meminfo)" >> "$GITHUB_ENV"
-        echo "SARIF_DIR_PATH=${{ github.workspace }}/pqc-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
+        echo "SARIF_DIR_PATH=${{ github.workspace }}/cbom-results/${{ inputs.repositoryNameWithOwner }}" >> "$GITHUB_ENV"
         DEFAULT_BRANCH=$(gh api repos/${{ inputs.repositoryNameWithOwner }} --jq ".default_branch")
         echo "DEFAULT_BRANCH=${DEFAULT_BRANCH}" >> "$GITHUB_ENV"
         echo "GIT_SHA=$(gh api repos/${{ inputs.repositoryNameWithOwner }}/branches/${DEFAULT_BRANCH} \
           --jq='.commit.sha')" >> "$GITHUB_ENV"
-        echo "PQC_DATA_REPO=pre-quantum-research/pqc-data" >> "$GITHUB_ENV"
+        echo "CBOM_DATA_REPO=advanced-security/crypto-bill-of-materials-data" >> "$GITHUB_ENV"
     - name: Check for existing analysis results
       id: check-for-results
       shell: bash
       run: |
         # Check for existing analysis results
         echo "::group::Check for existing analysis results"
-        curl -O -s -f -X GET -H "Authorization: token ${{ env.REPO_CONTENT_TOKEN }}" \
-          "https://raw.githubusercontent.com/${PQC_DATA_REPO}/main/data/${{ inputs.repositoryNameWithOwner }}/${GIT_SHA}/${{ inputs.language }}.sarif" || true
+        curl -O -s -f -X GET -H "Authorization: token ${{ secrets.CONTENT_TOKEN }}" \
+          "https://raw.githubusercontent.com/${CBOM_DATA_REPO}/main/data/${{ inputs.repositoryNameWithOwner }}/${GIT_SHA}/${{ inputs.language }}.sarif" || true
         if [[ -f "${{ inputs.language }}.sarif" ]]; then
           mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
           mv ${{ inputs.language }}.sarif ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif
@@ -143,13 +142,12 @@ runs:
       run: |
         # Analyze CodeQL database
         echo "::group::Analyze CodeQL database"
-        codeql pack download pre-quantum-research/${{ inputs.language }}-cryptography
         mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
         codeql database analyze ${{ github.workspace }}/${CODEQL_DB_NAME} \
           codeql/${{ inputs.language }}-queries:experimental/cryptography/inventory/new_models \
           --ram=${CODEQL_RAM} \
           --output=${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif \
-          --format=sarifv2.1.0 --sarif-category="PQC:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
+          --format=sarifv2.1.0 --sarif-category="CBOM:${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --sarif-add-query-help --sarif-add-snippets \
           --timeout=${{ inputs.queryTimeout }}
         echo "::endgroup::"
@@ -163,20 +161,20 @@ runs:
       run: |
         # Request GitHub CodeQL analysis
         echo "::group::Request GitHub CodeQL analysis"
-        SEARCH_RESULTS=$(gh issue list --repo ${PQC_DATA_REPO} \
+        SEARCH_RESULTS=$(gh issue list --repo ${CBOM_DATA_REPO} \
           --search "${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }}" \
           --state open --json id,number,title)
         RESULT_COUNT=$(jq length <<< "${SEARCH_RESULTS}")
         if [[ ${RESULT_COUNT} -eq 0 ]]; then
           gh issue create \
-            --repo ${PQC_DATA_REPO} \
+            --repo ${CBOM_DATA_REPO} \
             --title ${{ inputs.repositoryNameWithOwner }}/${{ inputs.language }} \
             --label analysis-requested \
             --body "${GIT_SHA}"
         else
           ISSUE_NUMBER=$(jq -r ".[0].number" <<< "${SEARCH_RESULTS}")
           gh issue comment \
-            --repo ${PQC_DATA_REPO} \
+            --repo ${CBOM_DATA_REPO} \
             ${ISSUE_NUMBER} \
             --body "${GIT_SHA}"
           if [[ ${RESULT_COUNT} -gt 1 ]]; then
@@ -188,8 +186,8 @@ runs:
       if: env.SARIF_RESULTS_DOWNLOADED == 'true' || steps.analyze-codeql-db.outcome == 'success'
       uses: actions/upload-artifact@v3
       with:
-        name: pqc-results
-        path: ${{ github.workspace }}/pqc-results
+        name: cbom-results
+        path: ${{ github.workspace }}/cbom-results
     - name: Upload results to Code Scanning
       if: |
         inputs.uploadToCodeScanning == 'true' &&
