@@ -26,6 +26,9 @@ inputs:
     description: Whether to upload the results to GitHub Code Scanning
     required: false
     default: "false"
+  dataRepoToken:
+    description: Token to auth to data repo, not needed when repo is made public
+    required: true
 runs:
   using: composite
   steps:
@@ -56,7 +59,7 @@ runs:
       run: |
         # Check for existing analysis results
         echo "::group::Check for existing analysis results"
-        curl -O -s -f -X GET -H "Authorization: token ${{ secrets.CONTENT_TOKEN }}" \
+        curl -O -s -f -X GET -H "Authorization: token ${{ inputs.dataRepoToken }}" \
           "https://raw.githubusercontent.com/${CBOM_DATA_REPO}/main/data/${{ inputs.repositoryNameWithOwner }}/${GIT_SHA}/${{ inputs.language }}.sarif" || true
         if [[ -f "${{ inputs.language }}.sarif" ]]; then
           mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
