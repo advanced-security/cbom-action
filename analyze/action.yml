@@ -26,25 +26,9 @@ inputs:
     description: Whether to upload the results to GitHub Code Scanning
     required: false
     default: "false"
-  actionsTokensAppId:
-    description: The GitHub App ID for the actions-tokens GitHub App - temp
-    required: false
-    default: ""
-  actionsTokensPrivateKey:
-    description: The GitHub App private key for the actions-tokens GitHub App - temp
-    required: false
-    default: ""
 runs:
   using: composite
   steps:
-    - name: Generate repo access token
-      if: inputs.actionsTokensAppId != ''
-      id: app-token
-      uses: actions/create-github-app-token@v1
-      with:
-        app-id: ${{ inputs.actionsTokensAppId }}
-        private-key: ${{ inputs.actionsTokensPrivateKey }}
-        owner: pre-quantum-research
     - name: Set up env
       shell: bash
       env:
@@ -54,7 +38,7 @@ runs:
         IFS=/ read -r REPO_OWNER REPO_NAME <<< ${{ inputs.repositoryNameWithOwner }}
         echo "REPO_OWNER=${REPO_OWNER}" >> "$GITHUB_ENV"
         echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
-        echo "REPO_CONTENT_TOKEN=${{ steps.app-token.outputs.token }}" >> "$GITHUB_ENV"
+        echo "REPO_CONTENT_TOKEN=${{ secrets.content-token }}" >> "$GITHUB_ENV"
         echo "GH_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "GITHUB_TOKEN=${{ github.token }}" >> "$GITHUB_ENV"
         echo "CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS=true" >> "$GITHUB_ENV"
