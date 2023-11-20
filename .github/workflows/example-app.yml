@@ -15,6 +15,7 @@ jobs:
         with:
           repositoryNameWithOwner: ${{ github.repository }}
           analyzeDependencies: true
+          minimumLanguageBytes: 0
   run-cbom-action:
     name: ${{ fromJson(matrix.repository).nameWithOwner }} - ${{ fromJson(matrix.repository).language }}
     runs-on: ubuntu-latest
