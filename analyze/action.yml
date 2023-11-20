@@ -38,6 +38,7 @@ runs:
   using: composite
   steps:
     - name: Generate repo access token
+      if: inputs.actionsTokensAppId != ''
       id: app-token
       uses: actions/create-github-app-token@v1
       with:
