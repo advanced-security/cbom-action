@@ -116,7 +116,7 @@ runs:
               .data.repository as $repository | 
               .data.repository.languages.edges[] | 
               select(.size >= ${{ inputs.minimumLanguageBytes }}).node.name |
-              select(. | IN("C","C++","Python")) as $language | 
+              select(. | IN("Python")) as $language | 
               {
                 nameWithOwner: $repository.nameWithOwner,
                 language: (if $language == "C" then "C++" else $language end),
@@ -132,7 +132,7 @@ runs:
               select($repository != null) | 
               $repository.languages.edges[] | 
               select(.size >= ${{ inputs.minimumLanguageBytes }}).node.name |
-              select(. | IN("C","C++","Python")) as $language | 
+              select(. | IN("Python")) as $language | 
               {
                 nameWithOwner: $repository.nameWithOwner,
                 language: (if $language == "C" then "C++" else $language end),
