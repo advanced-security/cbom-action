@@ -4,6 +4,8 @@ Create a Crypto Bill of Materials using CodeQL
 
 ## Usage
 
+Create a new workflow file under `.github/workflows` with the following content. This action will run when a commit is pushed to main (edit as required to match your default branch), or when started manually.
+
 ```yaml
 name: Create Crypto Bill of Materials
 
