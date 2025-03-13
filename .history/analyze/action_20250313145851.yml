@@ -182,11 +182,15 @@ runs:
           fi
         fi
         echo "::endgroup::"
+    - name: Set artifact name
+      shell: bash
+      run: |
+        echo "ARTIFACT_NAME=${REPO_OWNER}-${REPO_NAME}" >> "$GITHUB_ENV"
     - name: Archive results
       if: env.SARIF_RESULTS_DOWNLOADED == 'true' || steps.analyze-codeql-db.outcome == 'success'
       uses: actions/upload-artifact@v4
       with:
-        name: ${REPO_OWNER}-${REPO_NAME}
+        name: ${{ env.ARTIFACT_NAME }}
         path: ${{ github.workspace }}/cbom-results
     - name: Upload results to Code Scanning
       if: |
