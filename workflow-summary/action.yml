@@ -8,13 +8,6 @@ runs:
       with:
         name: cbom-results
         path: ${{ github.workspace }}/cbom-results
-    - name: Consolidate all artifacts into one folder
-        shell: bash
-        run: |
-          mkdir -p ${{ github.workspace }}/cbom-results  # Ensure the target directory exists
-          find ${{ github.workspace }}/cbom-temp-results -type f -name "*.sarif" -exec mv {} ${{ github.workspace }}/cbom-results/ \;
-          ls -lah ${{ github.workspace }}/cbom-results  # Verify all SARIF files are in one place
-
     - name: Post summary info
       shell: bash -ex {0}
       continue-on-error: true
