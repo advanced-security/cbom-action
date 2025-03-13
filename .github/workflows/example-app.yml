@@ -10,7 +10,7 @@ jobs:
     outputs:
       repositories: ${{ steps.build-matrix-action.outputs.repositories }}
     steps:
-      - uses: advanced-security/cbom-action/build-matrix@main
+      - uses: claudioforoncelli/cbom-action/build-matrix@cf-edits
         id: build-matrix-action
         with:
           repositoryNameWithOwner: ${{ github.repository }}
@@ -26,7 +26,7 @@ jobs:
       matrix:
         repository: ${{ fromJSON(needs.build-matrix.outputs.repositories) }}
     steps:
-      - uses: advanced-security/cbom-action/analyze@main
+      - uses: claudioforoncelli/cbom-action/analyze@cf-edits
         with:
           repositoryNameWithOwner: ${{ fromJson(matrix.repository).nameWithOwner }}
           language: ${{ fromJson(matrix.repository).language }}
@@ -35,5 +35,5 @@ jobs:
     runs-on: ubuntu-latest
     needs: run-cbom-action
     steps:
-      - uses: advanced-security/cbom-action/workflow-summary@main
+      - uses: claudioforoncelli/cbom-action/workflow-summary@cf-edits
  
