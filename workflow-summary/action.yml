@@ -7,6 +7,7 @@ runs:
       uses: actions/download-artifact@v4
       with:
         path: ${{ github.workspace }}/cbom-results
+        merge-multiple: true
     - name: Post summary info
       shell: bash -ex {0}
       continue-on-error: true
