@@ -20,6 +20,6 @@ runs:
         echo "|----------|---------|-----------|-------------|-----------------|" >> $GITHUB_STEP_SUMMARY
         shopt -s globstar
         jq -cn 'foreach inputs as $i (0; . +1; "\(input_filename|rtrimstr(".sarif"))/\($i.runs[].results|length)")' **/*.sarif \
-        | xargs -I "{}" bash -c 'IFS=/ read -r ARTIFACT OWNER REPO COMMIT LANGUAGE RESULT_COUNT <<< {};
+        | xargs -I "{}" bash -c 'IFS=/ read -r OWNER REPO COMMIT LANGUAGE RESULT_COUNT <<< {};
             echo "| ${OWNER} | ${REPO} | ${COMMIT} | ${LANGUAGE} | ${RESULT_COUNT} |" >> $GITHUB_STEP_SUMMARY'
         echo "::endgroup::"
