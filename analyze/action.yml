@@ -62,14 +62,14 @@ runs:
           mkdir -p ${SARIF_DIR_PATH}/${GIT_SHA}
           mv ${{ inputs.language }}.sarif ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif
           echo "SARIF results file downloaded to ${SARIF_DIR_PATH}/${GIT_SHA}/${{ inputs.language }}.sarif"
-          echo "SARIF_RESULTS_DOWNLOADED=true" >> "$GITHUB_ENV" 
+          echo "SARIF_RESULTS_DOWNLOADED=true" >> "$GITHUB_ENV"
         else
           echo "No SARIF results file found"
-          echo "SARIF_RESULTS_DOWNLOADED=false" >> "$GITHUB_ENV" 
+          echo "SARIF_RESULTS_DOWNLOADED=false" >> "$GITHUB_ENV"
         fi
         echo "::endgroup::"
     - name: Find or install CodeQL
-      if: env.SARIF_RESULTS_DOWNLOADED == 'false' 
+      if: env.SARIF_RESULTS_DOWNLOADED == 'false'
       shell: bash
       run: |
         # Find or install CodeQL
@@ -104,15 +104,15 @@ runs:
         if [[ -f ${CODEQL_DB_ZIP} ]]; then
           codeql database unbundle "${CODEQL_DB_ZIP}" --target="${{ github.workspace }}" --name=${CODEQL_DB_NAME}
           codeql database upgrade "${{ github.workspace }}/${CODEQL_DB_NAME}" || true
-          echo "CODEQL_DB_DOWNLOADED=true" >> "$GITHUB_ENV"   
+          echo "CODEQL_DB_DOWNLOADED=true" >> "$GITHUB_ENV"
         else
           echo "No CodeQL database found"
-          echo "CODEQL_DB_DOWNLOADED=false" >> "$GITHUB_ENV"     
+          echo "CODEQL_DB_DOWNLOADED=false" >> "$GITHUB_ENV"
         fi
         echo "::endgroup::"
     - name: Checkout analysis repository
       if: |
-        env.SARIF_RESULTS_DOWNLOADED == 'false' && 
+        env.SARIF_RESULTS_DOWNLOADED == 'false' &&
         env.CODEQL_DB_DOWNLOADED == 'false' &&
         inputs.createCodeQLDatabaseIfRequired == 'true'
       uses: actions/checkout@v4
@@ -123,7 +123,7 @@ runs:
       id: create-codeql-db
       continue-on-error: true
       if: |
-        env.SARIF_RESULTS_DOWNLOADED == 'false' && 
+        env.SARIF_RESULTS_DOWNLOADED == 'false' &&
         env.CODEQL_DB_DOWNLOADED == 'false' &&
         inputs.createCodeQLDatabaseIfRequired == 'true'
       shell: bash
@@ -135,7 +135,7 @@ runs:
     - name: Analyze CodeQL DB
       id: analyze-codeql-db
       if: |
-        env.SARIF_RESULTS_DOWNLOADED == 'false' && 
+        env.SARIF_RESULTS_DOWNLOADED == 'false' &&
         (steps.create-codeql-db.outcome == 'success' || env.CODEQL_DB_DOWNLOADED == 'true')
       shell: bash
       continue-on-error: true
@@ -154,8 +154,8 @@ runs:
     - name: Request GitHub CodeQL analysis
       if: |
         inputs.requestGitHubAnalysis == 'true' &&
-        env.SARIF_RESULTS_DOWNLOADED == 'false' && 
-        env.CODEQL_DB_DOWNLOADED == 'false' && 
+        env.SARIF_RESULTS_DOWNLOADED == 'false' &&
+        env.CODEQL_DB_DOWNLOADED == 'false' &&
         steps.analyze-codeql-db.outcome != 'success'
       shell: bash
       run: |
@@ -184,7 +184,7 @@ runs:
         echo "::endgroup::"
     - name: Archive results
       if: env.SARIF_RESULTS_DOWNLOADED == 'true' || steps.analyze-codeql-db.outcome == 'success'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cbom-results
         path: ${{ github.workspace }}/cbom-results
@@ -192,7 +192,7 @@ runs:
       if: |
         inputs.uploadToCodeScanning == 'true' &&
         (env.SARIF_RESULTS_DOWNLOADED == 'true' || steps.analyze-codeql-db.outcome == 'success')
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ env.SARIF_DIR_PATH }}/${{ env.GIT_SHA }}/${{ inputs.language }}.sarif
 
