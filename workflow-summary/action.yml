@@ -4,7 +4,7 @@ runs:
   using: composite
   steps:
     - name: Unarchive results
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: cbom-results
         path: ${{ github.workspace }}/cbom-results
