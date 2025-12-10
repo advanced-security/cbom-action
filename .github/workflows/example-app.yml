@@ -1,4 +1,6 @@
 name: Create Crypto Bill of Materials
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:
