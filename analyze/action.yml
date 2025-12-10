@@ -184,7 +184,7 @@ runs:
         echo "::endgroup::"
     - name: Archive results
       if: env.SARIF_RESULTS_DOWNLOADED == 'true' || steps.analyze-codeql-db.outcome == 'success'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cbom-results
         path: ${{ github.workspace }}/cbom-results
