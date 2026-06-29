@@ -1,65 +1,25 @@
 name: CI
 
-# Validate pull requests by:
-#  1. Ensuring the example workflow documented in the README has not drifted from
-#     the canonical .github/workflows/example-app.yml file (validates the docs).
-#  2. Running the example workflow end to end so the action steps are exercised
-#     (validates nothing breaks).
+# Smoke-test the published pipeline on pushes to main by running the documented
+# example workflow as-is. The example pins the action to `@main`, so this exercises
+# the latest merged action code end to end and validates the pipeline users copy
+# from the README.
 #
-# Security notes:
-#  - This uses the `pull_request` trigger (never `pull_request_target`), so PRs
-#    from forks run with a read-only GITHUB_TOKEN and no access to repository
-#    secrets. Even a malicious PR cannot exfiltrate secrets or gain write access.
-#  - Permissions are restricted to `contents: read`.
-#  - The example workflow keeps the write-capable options off by default
-#    (requestGitHubAnalysis / uploadToCodeScanning), so a PR run never writes
-#    anywhere external.
-#  - GitHub's default "require approval for fork pull requests" gate means a
-#    maintainer reviews the diff before the workflow runs on contributor code.
+# Pull request changes are validated separately by .github/workflows/ci-pr.yml,
+# which runs the action from the PR checkout (local `./` refs) so contributor
+# changes are exercised before they ever reach `@main`.
 permissions:
   contents: read
 
 on:
-  pull_request:
   push:
     branches:
       - main
   workflow_dispatch:
 
 jobs:
-  docs-drift:
-    name: Validate README example matches example-app.yml
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check the README example has not drifted from example-app.yml
-        shell: bash
-        run: |
-          # Compare the `jobs:` section of the first ```yaml block in the README
-          # with the `jobs:` section of the example workflow, ignoring the action
-          # ref (the README pins @v1 while the workflow tracks @main) and blank lines.
-          set -euo pipefail
-
-          extract_jobs() {
-            sed -n '/^jobs:/,$p' "$1" \
-              | sed -E 's#(cbom-action/[a-z-]+)@[A-Za-z0-9._-]+#\1@REF#g' \
-              | sed '/^[[:space:]]*$/d'
-          }
-
-          # Pull the first ```yaml fenced block out of the README.
-          awk '/^```yaml$/{f=1; next} /^```$/{if(f) exit} f' README.md > /tmp/readme-example.yml
-
-          if ! diff -u \
-              <(extract_jobs /tmp/readme-example.yml) \
-              <(extract_jobs .github/workflows/example-app.yml); then
-            echo "::error::The README usage example has drifted from .github/workflows/example-app.yml. Update both so they stay in sync."
-            exit 1
-          fi
-          echo "README example matches example-app.yml."
-
   example-app:
-    name: Run example CBOM workflow
-    needs: docs-drift
-    # Call the documented example workflow as-is so PRs validate that the
-    # published pipeline still runs end to end.
+    name: Run example CBOM workflow (@main)
+    # Call the documented example workflow as-is so pushes to main validate that
+    # the published pipeline still runs end to end.
     uses: ./.github/workflows/example-app.yml

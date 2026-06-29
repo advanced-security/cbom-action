@@ -1,0 +1,96 @@
+name: CI (PR)
+
+# Validate pull requests by:
+#  1. Ensuring the example workflow documented in the README has not drifted from
+#     the canonical .github/workflows/example-app.yml file (validates the docs).
+#  2. Running the action from the PR checkout via local `./` refs so the actual
+#     proposed changes to analyze/, build-matrix/ and workflow-summary/ are
+#     exercised end to end before merge. (The example-app.yml pipeline pins the
+#     action to `@main`, so it cannot test PR code; ci.yml runs that on push.)
+#
+# Security notes:
+#  - This uses the `pull_request` trigger (never `pull_request_target`), so PRs
+#    from forks run with a read-only GITHUB_TOKEN and no access to repository
+#    secrets. Even a malicious PR cannot exfiltrate secrets or gain write access.
+#  - Permissions are restricted to `contents: read`.
+#  - The write-capable options stay off by default (requestGitHubAnalysis /
+#    uploadToCodeScanning), so a PR run never writes anywhere external.
+#  - GitHub's default "require approval for fork pull requests" gate means a
+#    maintainer reviews the diff before the workflow runs on contributor code.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docs-drift:
+    name: Validate README example matches example-app.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the README example has not drifted from example-app.yml
+        shell: bash
+        run: |
+          # Compare the `jobs:` section of the first ```yaml block in the README
+          # with the `jobs:` section of the example workflow, ignoring the action
+          # ref (the README pins @v1 while the workflow tracks @main) and blank lines.
+          set -euo pipefail
+
+          extract_jobs() {
+            sed -n '/^jobs:/,$p' "$1" \
+              | sed -E 's#(cbom-action/[a-z-]+)@[A-Za-z0-9._-]+#\1@REF#g' \
+              | sed '/^[[:space:]]*$/d'
+          }
+
+          # Pull the first ```yaml fenced block out of the README.
+          awk '/^```yaml$/{f=1; next} /^```$/{if(f) exit} f' README.md > /tmp/readme-example.yml
+
+          if ! diff -u \
+              <(extract_jobs /tmp/readme-example.yml) \
+              <(extract_jobs .github/workflows/example-app.yml); then
+            echo "::error::The README usage example has drifted from .github/workflows/example-app.yml. Update both so they stay in sync."
+            exit 1
+          fi
+          echo "README example matches example-app.yml."
+
+  # The jobs below mirror .github/workflows/example-app.yml, but check out the PR
+  # and reference the action with local `./` paths so the proposed changes are the
+  # code under test (rather than `@main`).
+  build-matrix:
+    name: Build analysis matrix
+    needs: docs-drift
+    runs-on: ubuntu-latest
+    outputs:
+      repositories: ${{ steps.build-matrix-action.outputs.repositories }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./build-matrix
+        id: build-matrix-action
+        with:
+          repositoryNameWithOwner: ${{ github.repository }}
+          analyzeDependencies: true
+          minimumLanguageBytes: 0
+  run-cbom-action:
+    name: ${{ fromJson(matrix.repository).nameWithOwner }} - ${{ fromJson(matrix.repository).language }}
+    runs-on: ubuntu-latest
+    needs: build-matrix
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        repository: ${{ fromJSON(needs.build-matrix.outputs.repositories) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./analyze
+        with:
+          repositoryNameWithOwner: ${{ fromJson(matrix.repository).nameWithOwner }}
+          language: ${{ fromJson(matrix.repository).language }}
+  add-workflow-summary:
+    name: CBOM results
+    runs-on: ubuntu-latest
+    needs: run-cbom-action
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./workflow-summary
