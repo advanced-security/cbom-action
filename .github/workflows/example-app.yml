@@ -4,8 +4,7 @@ permissions:
 
 on:
   workflow_dispatch:
-  # Allow this example workflow to be invoked by the CI workflow (.github/workflows/ci.yml)
-  # so PRs validate that the documented pipeline still runs end to end.
+  # Let the CI workflows run this example pipeline.
   workflow_call:
 
 jobs:
