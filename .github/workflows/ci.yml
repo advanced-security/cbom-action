@@ -1,0 +1,25 @@
+name: CI
+
+# Smoke-test the published pipeline on pushes to main by running the documented
+# example workflow as-is. The example pins the action to `@main`, so this exercises
+# the latest merged action code end to end and validates the pipeline users copy
+# from the README.
+#
+# Pull request changes are validated separately by .github/workflows/ci-pr.yml,
+# which runs the action from the PR checkout (local `./` refs) so contributor
+# changes are exercised before they ever reach `@main`.
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  example-app:
+    name: Run example CBOM workflow (@main)
+    # Call the documented example workflow as-is so pushes to main validate that
+    # the published pipeline still runs end to end.
+    uses: ./.github/workflows/example-app.yml

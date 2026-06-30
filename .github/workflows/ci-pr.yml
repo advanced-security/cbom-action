@@ -1,0 +1,21 @@
+name: CI (PR)
+
+# Validate pull requests by running the exact pipeline we document for end users
+# (.github/workflows/example-app.yml), so what we test on a PR is always what we
+# ship. There is no separate copy of the jobs to drift from the example.
+#
+# Security notes:
+#  - Uses the `pull_request` trigger (never `pull_request_target`), so PRs from
+#    forks run with a read-only GITHUB_TOKEN and no access to repository secrets.
+#  - Permissions are restricted to `contents: read`.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  example-app:
+    name: Run example CBOM workflow
+    uses: ./.github/workflows/example-app.yml

@@ -4,6 +4,8 @@ permissions:
 
 on:
   workflow_dispatch:
+  # Let the CI workflows run this example pipeline.
+  workflow_call:
 
 jobs:
   build-matrix:
